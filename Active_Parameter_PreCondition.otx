@@ -1,0 +1,2021 @@
+<?xml version="1.0"?>
+<otx xmlns:diagmeta="http://iso.org/OTX/1.0.0/Auxiliaries/DiagMetaData" xmlns:hmi="http://iso.org/OTX/1.0.0/HMI" xmlns:i18n="http://iso.org/OTX/1.0.0/i18n" xmlns:diag="http://iso.org/OTX/1.0.0/DiagCom" xmlns:event="http://iso.org/OTX/1.0.0/Event" xmlns:dtType="http://iso.org/OTX/1.0.0/Util" xmlns:dtype="http://iso.org/OTX/1.0.0/DataTypes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:file="http://iso.org/OTX/1.0.0/File" xmlns:log="http://iso.org/OTX/1.0.0/Logging" xmlns:string="http://iso.org/OTX/1.0.0/StringUtil" id="otx202304272015599888" name="Script" package="Package" version="" timestamp="2023-04-27T20:15:59.9888022+08:00" xmlns="http://iso.org/OTX/1.0.0">
+  <imports>
+    <import package="Package" document="Session_Change" prefix="imp3dda271889c26164d4760e2d46b4a82d" />
+    <import package="Package" document="PinCodes" prefix="imp0a91e7b588e837ef42f009b45982613b" />
+    <import package="Package" document="Security_Access" prefix="imp315cfbbb67fabe0d863e36776a48dc9a" />
+    <import package="Package" document="ReplaceString" prefix="impfce5b6309b45d0ec0dcccb85429d7ccf" />
+    <import package="Package" document="EcuComm" prefix="imp9f11c978f53960250663392b21925d4d" />
+  </imports>
+  <declarations>
+    <constant id="GlobalConstantDeclaration202312281649174474" name="UNLOCKED_LEVEL3">
+      <specification />
+      <realisation>
+        <dataType xsi:type="String">
+          <init value="Unlocked_Level3" />
+        </dataType>
+      </realisation>
+    </constant>
+    <constant id="GlobalConstantDeclaration202312281649474152" name="UNLOCKED_LEVEL2">
+      <specification />
+      <realisation>
+        <dataType xsi:type="String">
+          <init value="Unlocked_Level2" />
+        </dataType>
+      </realisation>
+    </constant>
+    <constant id="GlobalConstantDeclaration202312281724561513" name="EXTENDED">
+      <specification />
+      <realisation>
+        <dataType xsi:type="String">
+          <init value="Extended" />
+        </dataType>
+      </realisation>
+    </constant>
+  </declarations>
+  <signatures>
+    <signature id="Signature202309171032465829" name="CodeInfo" visibility="PUBLIC">
+      <realisation xsi:type="dtype:DatatypeSignature">
+        <dtype:elements>
+          <dtype:element id="DatatypeElementDeclaration202309171033547795" name="codeId">
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </dtype:element>
+          <dtype:element id="DatatypeElementDeclaration202309171034104584" name="codeIdType">
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </dtype:element>
+          <dtype:element id="DatatypeElementDeclaration202309171034386643" name="algorithmID">
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </dtype:element>
+          <dtype:element id="DatatypeElementDeclaration202309171034561031" name="defaultValue">
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </dtype:element>
+          <dtype:element id="DatatypeElementDeclaration202309171035125672" name="actualValue">
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </dtype:element>
+        </dtype:elements>
+      </realisation>
+    </signature>
+  </signatures>
+  <procedures>
+    <procedure id="Procedure202304272015599898" name="main" visibility="PUBLIC">
+      <realisation>
+        <parameters>
+          <inParam id="InParameterDeclaration7bb12d1215f149a38044d089f626c8e3" name="logicalLinkName">
+            <specification>"LL_CEM_1A01_DoIP"</specification>
+            <realisation>
+              <dataType xsi:type="String">
+                <init value="LL_CEM_1A01_DoIP" />
+              </dataType>
+            </realisation>
+          </inParam>
+          <outParam id="OutParameterDeclaration202309201504002447" name="successful">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Boolean">
+                <init value="false" />
+              </dataType>
+            </realisation>
+          </outParam>
+          <inParam id="InParameterDeclarationdc314263ffcd4336ae767e1555085eee" name="preConditionList">
+            <specification>{"Extended","Unlocked_Level2"}</specification>
+            <realisation>
+              <dataType xsi:type="List">
+                <itemType xsi:type="String" />
+                <init>
+                  <itemType xsi:type="String" />
+                  <items>
+                    <item xsi:type="StringLiteral" value="Extended" />
+                    <item xsi:type="StringLiteral" value="Unlocked_Level2" />
+                  </items>
+                </init>
+              </dataType>
+            </realisation>
+          </inParam>
+          <outParam id="OutParameterDeclaration202309261030249634" name="msg">
+            <specification>输出结果信息，用于打印log</specification>
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </outParam>
+          <inParam id="InParameterDeclaration8dca1f7755b04122b02734566581d4c6" name="pinCodeInfo">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Map">
+                <keyType xsi:type="String" />
+                <valueType xsi:type="List">
+                  <itemType xsi:type="Map">
+                    <keyType xsi:type="String" />
+                    <valueType xsi:type="String" />
+                  </itemType>
+                </valueType>
+              </dataType>
+            </realisation>
+          </inParam>
+        </parameters>
+        <declarations>
+          <variable id="VariableDeclaration202309201730270239" name="securityLevel">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclarationceb60aa942224aedaf00e5635aff7805" name="comChannel">
+            <specification />
+            <realisation>
+              <dataType xsi:type="diag:ComChannel" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration8c2d5284b4874cf6a3e2b142a5d8f2bf" name="iStatus">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Integer">
+                <init value="-1" />
+              </dataType>
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration6bdc4b697ef64749a52f26db84dd73b9" name="strDefaultValue">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </variable>
+        </declarations>
+        <flow>
+          <branch id="Branch2865c891908143688a7197d8e8635cc6">
+            <realisation>
+              <if>
+                <condition>
+                  <specification />
+                  <realisation xsi:type="IsEqual">
+                    <term xsi:type="ListGetLength">
+                      <list xsi:type="ListValue" valueOf="preConditionList">
+                        <path />
+                      </list>
+                    </term>
+                    <term xsi:type="IntegerLiteral" value="0" />
+                  </realisation>
+                </condition>
+                <flow>
+                  <action id="Actionf987b35d70a547428ea5b79136e0ce38">
+                    <specification />
+                    <realisation xsi:type="Assignment">
+                      <result xsi:type="StringVariable" name="msg" />
+                      <term xsi:type="StringLiteral" value="No PreCodition !" />
+                    </realisation>
+                  </action>
+                  <return id="Return0f50727507b84f10a4684257143767b8">
+                    <metaData>
+                      <data key="BlockPositions" />
+                    </metaData>
+                  </return>
+                </flow>
+              </if>
+            </realisation>
+          </branch>
+          <branch id="Branch87a763c82db04693a8cd15cd51a305c9">
+            <realisation>
+              <if>
+                <condition>
+                  <specification />
+                  <realisation xsi:type="ListContainsValue">
+                    <list xsi:type="ListValue" valueOf="preConditionList">
+                      <path />
+                    </list>
+                    <value xsi:type="StringValue" valueOf="EXTENDED">
+                      <path />
+                    </value>
+                  </realisation>
+                </condition>
+                <flow>
+                  <action id="Actionada39acbe2d3488da51cb62124a36242">
+                    <specification />
+                    <realisation xsi:type="ProcedureCall" procedure="ExtendedSession">
+                      <arguments>
+                        <inArg param="logicalLink">
+                          <term xsi:type="StringValue" valueOf="logicalLinkName">
+                            <path />
+                          </term>
+                        </inArg>
+                        <outArg param="iStatus">
+                          <variable xsi:type="IntegerVariable" name="iStatus" />
+                        </outArg>
+                      </arguments>
+                    </realisation>
+                  </action>
+                </flow>
+              </if>
+            </realisation>
+          </branch>
+          <branch id="Branch6ee9b73bb8a24afab6b7e1b4f2165f50">
+            <realisation>
+              <if>
+                <condition>
+                  <specification />
+                  <realisation xsi:type="ListContainsValue">
+                    <list xsi:type="ListValue" valueOf="preConditionList">
+                      <path />
+                    </list>
+                    <value xsi:type="StringValue" valueOf="UNLOCKED_LEVEL2">
+                      <path />
+                    </value>
+                  </realisation>
+                </condition>
+                <flow>
+                  <action id="Actionfe1815455b444638a8bf111dfebbb761">
+                    <specification />
+                    <realisation xsi:type="ProcedureCall" procedure="SA_Level2">
+                      <arguments>
+                        <inArg param="pinCodeInfo">
+                          <term xsi:type="MapValue" valueOf="pinCodeInfo">
+                            <path />
+                          </term>
+                        </inArg>
+                        <inArg param="logicalLink">
+                          <term xsi:type="StringValue" valueOf="logicalLinkName">
+                            <path />
+                          </term>
+                        </inArg>
+                        <outArg param="iStatus">
+                          <variable xsi:type="IntegerVariable" name="iStatus" />
+                        </outArg>
+                      </arguments>
+                    </realisation>
+                  </action>
+                </flow>
+              </if>
+            </realisation>
+          </branch>
+          <branch id="Branch25a964fb01794b07877b2f7b20d70721">
+            <realisation>
+              <if>
+                <condition>
+                  <specification />
+                  <realisation xsi:type="ListContainsValue">
+                    <list xsi:type="ListValue" valueOf="preConditionList">
+                      <path />
+                    </list>
+                    <value xsi:type="StringValue" valueOf="UNLOCKED_LEVEL3">
+                      <path />
+                    </value>
+                  </realisation>
+                </condition>
+                <flow>
+                  <action id="Action17cb887480c942c5a8f0f723f77f995c">
+                    <specification />
+                    <realisation xsi:type="ProcedureCall" procedure="SA_Level3">
+                      <arguments>
+                        <inArg param="pinCodeInfo">
+                          <term xsi:type="MapValue" valueOf="pinCodeInfo">
+                            <path />
+                          </term>
+                        </inArg>
+                        <inArg param="logicalLink">
+                          <term xsi:type="StringValue" valueOf="logicalLinkName">
+                            <path />
+                          </term>
+                        </inArg>
+                        <outArg param="iStatus">
+                          <variable xsi:type="IntegerVariable" name="iStatus" />
+                        </outArg>
+                      </arguments>
+                    </realisation>
+                  </action>
+                </flow>
+              </if>
+            </realisation>
+          </branch>
+          <branch id="Branch9f6c556c73174485a0abd1360c0fa138">
+            <realisation>
+              <if>
+                <condition>
+                  <specification />
+                  <realisation xsi:type="IsEqual">
+                    <term xsi:type="IntegerValue" valueOf="iStatus">
+                      <path />
+                    </term>
+                    <term xsi:type="IntegerLiteral" value="0" />
+                  </realisation>
+                </condition>
+                <flow>
+                  <action id="Action1905c9e8fba2429eb5a6057a326cd6f0">
+                    <specification />
+                    <realisation xsi:type="Assignment">
+                      <result xsi:type="StringVariable" name="successful" />
+                      <term xsi:type="BooleanLiteral" value="true" />
+                    </realisation>
+                  </action>
+                </flow>
+              </if>
+            </realisation>
+          </branch>
+        </flow>
+      </realisation>
+    </procedure>
+    <procedure id="Procedure202309201511441777" name="JsonParseCodeInfo" visibility="PUBLIC">
+      <specification />
+      <realisation>
+        <parameters>
+          <inParam id="InParameterDeclaration202309201512579337" name="jsonCodeInfo">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </inParam>
+          <outParam id="OutParameterDeclaration202309201514122618" name="codeInfoStruct">
+            <specification />
+            <realisation>
+              <dataType xsi:type="dtype:Structure" structureType="CodeInfo" />
+            </realisation>
+          </outParam>
+        </parameters>
+        <declarations>
+          <variable id="VariableDeclaration202309201553496643" name="subCodeInfo">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202309201554496729" name="codeItems">
+            <specification />
+            <realisation>
+              <dataType xsi:type="List">
+                <itemType xsi:type="String" />
+              </dataType>
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202309201556045529" name="codeItem">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202309201556494171" name="keyValues">
+            <specification />
+            <realisation>
+              <dataType xsi:type="List">
+                <itemType xsi:type="String" />
+              </dataType>
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202309201601486014" name="jsonCodeInfoTrim">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202309202020285535" name="jsonString">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202309202023106435" name="bool">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Boolean" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202310041447249685" name="index">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Integer" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202310152032260580" name="jsonCodeStr">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202310152034480445" name="index_preCondition">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Integer" />
+            </realisation>
+          </variable>
+        </declarations>
+        <flow>
+          <action id="Actionda0efe4217fa4761bcb0cbcdb0be2bc3">
+            <specification />
+            <realisation xsi:type="Assignment">
+              <result xsi:type="StringVariable" name="jsonCodeStr" />
+              <term xsi:type="StringValue" valueOf="jsonCodeInfo">
+                <path />
+              </term>
+            </realisation>
+          </action>
+          <action id="Actiond861af7657714c1791788d22518b8936" disabled="true">
+            <specification />
+            <realisation xsi:type="ProcedureCall" procedure="impfce5b6309b45d0ec0dcccb85429d7ccf:main">
+              <arguments>
+                <inArg param="string">
+                  <term xsi:type="StringValue" valueOf="jsonCodeInfo">
+                    <path />
+                  </term>
+                </inArg>
+                <inArg param="oldSubStr">
+                  <term xsi:type="StringLiteral" value="\&quot;" />
+                </inArg>
+                <outArg param="newString">
+                  <variable xsi:type="StringVariable" name="jsonCodeStr" />
+                </outArg>
+              </arguments>
+            </realisation>
+          </action>
+          <action id="Actiond89ba9ea9d0b4e69b5bee3adf9d06740">
+            <specification />
+            <realisation xsi:type="Assignment">
+              <result xsi:type="StringVariable" name="subCodeInfo" />
+              <term xsi:type="string:SubString">
+                <string:string xsi:type="StringValue" valueOf="jsonCodeStr">
+                  <path />
+                </string:string>
+                <string:index xsi:type="Add">
+                  <numeral xsi:type="string:IndexOf">
+                    <string:string xsi:type="StringValue" valueOf="jsonCodeStr">
+                      <path />
+                    </string:string>
+                    <string:pattern xsi:type="StringLiteral" value="{" />
+                  </numeral>
+                  <numeral xsi:type="IntegerLiteral" value="1" />
+                </string:index>
+                <string:count xsi:type="Subtract">
+                  <numeral xsi:type="string:IndexOf">
+                    <string:string xsi:type="StringValue" valueOf="jsonCodeStr">
+                      <path />
+                    </string:string>
+                    <string:pattern xsi:type="StringLiteral" value="}" />
+                  </numeral>
+                  <subtrahend xsi:type="IntegerLiteral" value="1" />
+                </string:count>
+              </term>
+            </realisation>
+          </action>
+          <action id="Action244704443843436aa5746f10f2c36cf6">
+            <specification />
+            <realisation xsi:type="Assignment">
+              <result xsi:type="ListVariable" name="codeItems" />
+              <term xsi:type="string:SplitString">
+                <string:string xsi:type="StringValue" valueOf="subCodeInfo">
+                  <path />
+                </string:string>
+                <string:delimiter xsi:type="StringLiteral" value="," />
+              </term>
+            </realisation>
+          </action>
+          <loop>
+            <realisation>
+              <configuration id="Loopf2ee0fa2970d46b2ad763b2d729c1b8e">
+                <realisation xsi:type="ForEachLoop">
+                  <locator xsi:type="IntegerVariable" name="index" />
+                  <collection xsi:type="ListValue" valueOf="codeItems">
+                    <path />
+                  </collection>
+                </realisation>
+              </configuration>
+              <flow>
+                <action id="Action42eed24f7ce8419885651c0c36667ce1">
+                  <specification />
+                  <realisation xsi:type="Assignment">
+                    <result xsi:type="StringVariable" name="codeItem" />
+                    <term xsi:type="ListValue" valueOf="codeItems">
+                      <path>
+                        <stepByIndex xsi:type="IntegerValue" valueOf="index">
+                          <path />
+                        </stepByIndex>
+                      </path>
+                    </term>
+                  </realisation>
+                </action>
+                <action id="Action337a546a2c83488a8e32e46a5c9d6890">
+                  <specification />
+                  <realisation xsi:type="Assignment">
+                    <result xsi:type="ListVariable" name="keyValues" />
+                    <term xsi:type="string:SplitString">
+                      <string:string xsi:type="StringValue" valueOf="codeItem">
+                        <path />
+                      </string:string>
+                      <string:delimiter xsi:type="StringLiteral" value=":" />
+                    </term>
+                  </realisation>
+                </action>
+                <branch id="Branch8e0c3a1a32cb484d82c86077f775e4ba">
+                  <realisation>
+                    <if>
+                      <condition>
+                        <specification />
+                        <realisation xsi:type="IsEqual">
+                          <term xsi:type="ListValue" valueOf="keyValues">
+                            <path>
+                              <stepByIndex xsi:type="IntegerLiteral" value="0" />
+                            </path>
+                          </term>
+                          <term xsi:type="StringLiteral" value="CodeID" />
+                        </realisation>
+                      </condition>
+                      <flow>
+                        <action id="Action07d19416af9f45d1873ea7c70f843a32">
+                          <specification />
+                          <realisation xsi:type="Assignment">
+                            <result xsi:type="StringVariable" name="codeInfoStruct">
+                              <path>
+                                <stepByName xsi:type="StringLiteral" value="codeId" />
+                              </path>
+                            </result>
+                            <term xsi:type="ListValue" valueOf="keyValues">
+                              <path>
+                                <stepByIndex xsi:type="IntegerLiteral" value="1" />
+                              </path>
+                            </term>
+                          </realisation>
+                        </action>
+                      </flow>
+                    </if>
+                  </realisation>
+                </branch>
+                <branch id="Branch59a50802591f47238e8f9262fbb2cccd">
+                  <realisation>
+                    <if>
+                      <condition>
+                        <specification />
+                        <realisation xsi:type="IsEqual">
+                          <term xsi:type="ListValue" valueOf="keyValues">
+                            <path>
+                              <stepByIndex xsi:type="IntegerLiteral" value="0" />
+                            </path>
+                          </term>
+                          <term xsi:type="StringLiteral" value="CodeIDType" />
+                        </realisation>
+                      </condition>
+                      <flow>
+                        <action id="Action990fa7e0881b4477ba2815ecdb627b1a">
+                          <specification />
+                          <realisation xsi:type="Assignment">
+                            <result xsi:type="StringVariable" name="codeInfoStruct">
+                              <path>
+                                <stepByName xsi:type="StringLiteral" value="codeIdType" />
+                              </path>
+                            </result>
+                            <term xsi:type="ListValue" valueOf="keyValues">
+                              <path>
+                                <stepByIndex xsi:type="IntegerLiteral" value="1" />
+                              </path>
+                            </term>
+                          </realisation>
+                        </action>
+                      </flow>
+                    </if>
+                  </realisation>
+                </branch>
+                <branch id="Branch0fb0f24b175247a79a8cbc1ce0675575">
+                  <realisation>
+                    <if>
+                      <condition>
+                        <specification />
+                        <realisation xsi:type="IsEqual">
+                          <term xsi:type="ListValue" valueOf="keyValues">
+                            <path>
+                              <stepByIndex xsi:type="IntegerLiteral" value="0" />
+                            </path>
+                          </term>
+                          <term xsi:type="StringLiteral" value="AlgorithmID" />
+                        </realisation>
+                      </condition>
+                      <flow>
+                        <action id="Actionfc6f6f218e9c4dae99d8b89a702a86cd">
+                          <specification />
+                          <realisation xsi:type="Assignment">
+                            <result xsi:type="StringVariable" name="codeInfoStruct">
+                              <path>
+                                <stepByName xsi:type="StringLiteral" value="algorithmID" />
+                              </path>
+                            </result>
+                            <term xsi:type="ListValue" valueOf="keyValues">
+                              <path>
+                                <stepByIndex xsi:type="IntegerLiteral" value="1" />
+                              </path>
+                            </term>
+                          </realisation>
+                        </action>
+                      </flow>
+                    </if>
+                  </realisation>
+                </branch>
+                <branch id="Branchcbda4576d25b4fba94a3f2cb554a2468">
+                  <realisation>
+                    <if>
+                      <condition>
+                        <specification />
+                        <realisation xsi:type="IsEqual">
+                          <term xsi:type="ListValue" valueOf="keyValues">
+                            <path>
+                              <stepByIndex xsi:type="IntegerLiteral" value="0" />
+                            </path>
+                          </term>
+                          <term xsi:type="StringLiteral" value="DefaultValue" />
+                        </realisation>
+                      </condition>
+                      <flow>
+                        <action id="Action7e977db683ac450b8110f139ca02564e">
+                          <specification />
+                          <realisation xsi:type="Assignment">
+                            <result xsi:type="StringVariable" name="codeInfoStruct">
+                              <path>
+                                <stepByName xsi:type="StringLiteral" value="defaultValue" />
+                              </path>
+                            </result>
+                            <term xsi:type="ListValue" valueOf="keyValues">
+                              <path>
+                                <stepByIndex xsi:type="IntegerLiteral" value="1" />
+                              </path>
+                            </term>
+                          </realisation>
+                        </action>
+                      </flow>
+                    </if>
+                  </realisation>
+                </branch>
+                <branch id="Branch847957ccf48f4e76b8c4524438794765">
+                  <realisation>
+                    <if>
+                      <condition>
+                        <specification />
+                        <realisation xsi:type="IsEqual">
+                          <term xsi:type="ListValue" valueOf="keyValues">
+                            <path>
+                              <stepByIndex xsi:type="IntegerLiteral" value="0" />
+                            </path>
+                          </term>
+                          <term xsi:type="StringLiteral" value="ActualValue" />
+                        </realisation>
+                      </condition>
+                      <flow>
+                        <action id="Actionf37494de38064946929c05b3e337b780">
+                          <specification />
+                          <realisation xsi:type="Assignment">
+                            <result xsi:type="StringVariable" name="codeInfoStruct">
+                              <path>
+                                <stepByName xsi:type="StringLiteral" value="actualValue" />
+                              </path>
+                            </result>
+                            <term xsi:type="ListValue" valueOf="keyValues">
+                              <path>
+                                <stepByIndex xsi:type="IntegerLiteral" value="1" />
+                              </path>
+                            </term>
+                          </realisation>
+                        </action>
+                      </flow>
+                    </if>
+                  </realisation>
+                </branch>
+              </flow>
+            </realisation>
+          </loop>
+        </flow>
+      </realisation>
+    </procedure>
+    <procedure id="Procedure202311251731360205" name="ExecuteDiagSession" visibility="PUBLIC">
+      <specification />
+      <realisation>
+        <parameters>
+          <inParam id="InParameterDeclaration202309112015183519" name="logicalLink">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String">
+                <init value="LL_CEM_1A01_DoIP" />
+              </dataType>
+            </realisation>
+          </inParam>
+          <inParam id="InParameterDeclaration202309211625363881" name="preConditionList">
+            <specification />
+            <realisation>
+              <dataType xsi:type="List">
+                <itemType xsi:type="String" />
+                <init>
+                  <itemType xsi:type="String" />
+                  <items>
+                    <item xsi:type="StringLiteral" value="Extended" />
+                    <item xsi:type="StringLiteral" value="Unlocked_Level9" />
+                  </items>
+                </init>
+              </dataType>
+            </realisation>
+          </inParam>
+          <outParam id="OutParameterDeclaration202309201730270239" name="securityLevel">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </outParam>
+          <outParam id="OutParameterDeclaration202309201504002447" name="successful">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Boolean">
+                <init value="false" />
+              </dataType>
+            </realisation>
+          </outParam>
+          <outParam id="OutParameterDeclaration202309261030249634" name="msg">
+            <specification>输出结果信息，用于打印log</specification>
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </outParam>
+        </parameters>
+        <declarations>
+          <variable id="VariableDeclaration202309201446168351" name="preConditionSession">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202309201457313802" name="includeDefault">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Boolean" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202309201501041193" name="includeExtended">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Boolean" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202309201727354737" name="bool">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Boolean" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202310041429545575" name="index_preCondition">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Integer" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202311251855551183" name="comChannel_ecu">
+            <specification />
+            <realisation>
+              <dataType xsi:type="diag:ComChannel" />
+            </realisation>
+          </variable>
+        </declarations>
+        <flow>
+          <action id="Actionb7eae088a21d46dd85c0565364aba646">
+            <specification />
+            <realisation xsi:type="Assignment">
+              <result xsi:type="StringVariable" name="comChannel_ecu" />
+              <term xsi:type="diag:GetComChannel">
+                <diag:identifier xsi:type="StringValue" valueOf="logicalLink">
+                  <path />
+                </diag:identifier>
+              </term>
+            </realisation>
+          </action>
+          <loop>
+            <realisation>
+              <configuration id="Loop4467c7fca5ac47efb8c06645aa5dcb17">
+                <realisation xsi:type="ForEachLoop">
+                  <locator xsi:type="IntegerVariable" name="index_preCondition" />
+                  <collection xsi:type="ListValue" valueOf="preConditionList">
+                    <path />
+                  </collection>
+                </realisation>
+              </configuration>
+              <flow>
+                <action id="Actioncd5a33aa08fd49c2bda5659273972978">
+                  <specification />
+                  <realisation xsi:type="Assignment">
+                    <result xsi:type="StringVariable" name="preConditionSession" />
+                    <term xsi:type="ListValue" valueOf="preConditionList">
+                      <path>
+                        <stepByIndex xsi:type="IntegerValue" valueOf="index_preCondition">
+                          <path />
+                        </stepByIndex>
+                      </path>
+                    </term>
+                  </realisation>
+                </action>
+                <branch id="Branchbe2f203b9bb845309cb6a999eefcaa19">
+                  <realisation>
+                    <if>
+                      <condition>
+                        <specification />
+                        <realisation xsi:type="IsEqual">
+                          <term xsi:type="StringValue" valueOf="preConditionSession">
+                            <path />
+                          </term>
+                          <term xsi:type="StringLiteral" value="Default" />
+                        </realisation>
+                      </condition>
+                      <flow>
+                        <action id="Action9596458d94944454b200758e18b3d024">
+                          <specification />
+                          <realisation xsi:type="Assignment">
+                            <result xsi:type="StringVariable" name="includeDefault" />
+                            <term xsi:type="BooleanLiteral" value="true" />
+                          </realisation>
+                        </action>
+                      </flow>
+                    </if>
+                  </realisation>
+                </branch>
+                <branch id="Branchd56f14f729494424933d505368a5c5ad">
+                  <realisation>
+                    <if>
+                      <condition>
+                        <specification />
+                        <realisation xsi:type="IsEqual">
+                          <term xsi:type="StringValue" valueOf="preConditionSession">
+                            <path />
+                          </term>
+                          <term xsi:type="StringLiteral" value="Extended" />
+                        </realisation>
+                      </condition>
+                      <flow>
+                        <action id="Action6accf2ff882941dcab0c7fb09c250347">
+                          <specification />
+                          <realisation xsi:type="Assignment">
+                            <result xsi:type="StringVariable" name="includeExtended" />
+                            <term xsi:type="BooleanLiteral" value="true" />
+                          </realisation>
+                        </action>
+                      </flow>
+                    </if>
+                  </realisation>
+                </branch>
+                <action id="Action6d35296fb4d8468e91f5209a25b2e57d">
+                  <specification />
+                  <realisation xsi:type="Assignment">
+                    <result xsi:type="StringVariable" name="bool" />
+                    <term xsi:type="IsEqual">
+                      <term xsi:type="string:IndexOf">
+                        <string:string xsi:type="StringValue" valueOf="preConditionSession">
+                          <path />
+                        </string:string>
+                        <string:pattern xsi:type="StringLiteral" value="Unlocked_" />
+                      </term>
+                      <term xsi:type="IntegerLiteral" value="-1" />
+                    </term>
+                  </realisation>
+                </action>
+                <branch id="Branch7507f2ea8ebc4efdbea90367d7a5ea2a">
+                  <realisation>
+                    <if>
+                      <condition>
+                        <specification>logicNot(IsEqual(IndexOf(preConditionSession,"Unlocked_"),-1))</specification>
+                        <realisation xsi:type="LogicNot">
+                          <term xsi:type="BooleanValue" valueOf="bool">
+                            <path />
+                          </term>
+                        </realisation>
+                      </condition>
+                      <flow>
+                        <action id="Actionf5e12d3a75864fd292137fe34a84e086">
+                          <specification />
+                          <realisation xsi:type="Assignment">
+                            <result xsi:type="StringVariable" name="securityLevel" />
+                            <term xsi:type="StringValue" valueOf="preConditionSession">
+                              <path />
+                            </term>
+                          </realisation>
+                        </action>
+                      </flow>
+                    </if>
+                  </realisation>
+                </branch>
+              </flow>
+            </realisation>
+          </loop>
+          <branch id="Branch6857a7dc22214f4e91999ee707e4efad">
+            <realisation>
+              <if>
+                <condition>
+                  <specification />
+                  <realisation xsi:type="BooleanValue" valueOf="includeDefault">
+                    <path />
+                  </realisation>
+                </condition>
+                <flow>
+                  <action id="Actionfb011d31d9ca486ca8b14c0ff7806c49">
+                    <specification />
+                    <realisation xsi:type="ProcedureCall" procedure="imp3dda271889c26164d4760e2d46b4a82d:main">
+                      <arguments>
+                        <inArg param="comChannel">
+                          <term xsi:type="diag:ComChannelValue" valueOf="comChannel_ecu">
+                            <diag:path />
+                          </term>
+                        </inArg>
+                        <inArg param="sessionType">
+                          <term xsi:type="StringLiteral" value="defaultSession" />
+                        </inArg>
+                        <outArg param="successful">
+                          <variable xsi:type="StringVariable" name="successful" />
+                        </outArg>
+                        <outArg param="msg">
+                          <variable xsi:type="StringVariable" name="msg" />
+                        </outArg>
+                      </arguments>
+                    </realisation>
+                  </action>
+                </flow>
+              </if>
+              <elseif>
+                <condition>
+                  <specification />
+                  <realisation xsi:type="BooleanValue" valueOf="includeExtended">
+                    <path />
+                  </realisation>
+                </condition>
+                <flow>
+                  <action id="Actionecc4f4ed792d4f0c98ca184e66fad4ad">
+                    <specification />
+                    <realisation xsi:type="ProcedureCall" procedure="imp3dda271889c26164d4760e2d46b4a82d:main">
+                      <arguments>
+                        <inArg param="comChannel">
+                          <term xsi:type="diag:ComChannelValue" valueOf="comChannel_ecu">
+                            <diag:path />
+                          </term>
+                        </inArg>
+                        <inArg param="sessionType">
+                          <term xsi:type="StringLiteral" value="extendedDiagnosticSession" />
+                        </inArg>
+                        <outArg param="successful">
+                          <variable xsi:type="StringVariable" name="successful" />
+                        </outArg>
+                        <outArg param="msg">
+                          <variable xsi:type="StringVariable" name="msg" />
+                        </outArg>
+                      </arguments>
+                    </realisation>
+                  </action>
+                </flow>
+              </elseif>
+            </realisation>
+          </branch>
+          <branch id="Branche3dbe7b6931e48cabcd3c217d43304df">
+            <realisation>
+              <if>
+                <condition>
+                  <specification />
+                  <realisation xsi:type="LogicNot">
+                    <term xsi:type="BooleanValue" valueOf="successful">
+                      <path />
+                    </term>
+                  </realisation>
+                </condition>
+                <flow>
+                  <action id="Action8be77d2d7eb34606bfbd457123b4f89d">
+                    <specification />
+                    <realisation xsi:type="hmi:ConfirmDialog">
+                      <hmi:title xsi:type="i18n:Translate">
+                        <i18n:translationKey xsi:type="i18n:CreateTranslationKey">
+                          <i18n:textId xsi:type="StringLiteral" value="hint" />
+                        </i18n:translationKey>
+                      </hmi:title>
+                      <hmi:message xsi:type="i18n:Translate">
+                        <i18n:translationKey xsi:type="i18n:CreateTranslationKey">
+                          <i18n:textId xsi:type="StringLiteral" value="0045daa635b006b64384a2b71d08bb2e" />
+                        </i18n:translationKey>
+                      </hmi:message>
+                      <hmi:messageType xsi:type="hmi:MessageTypeLiteral" value="ERROR">
+                        <metaData>
+                          <data key="MessageType" />
+                        </metaData>
+                      </hmi:messageType>
+                      <hmi:result name="" />
+                    </realisation>
+                  </action>
+                </flow>
+              </if>
+            </realisation>
+          </branch>
+        </flow>
+      </realisation>
+    </procedure>
+    <procedure id="Procedure202311251732097638" name="ExecuteSecurityAccess" visibility="PUBLIC">
+      <specification />
+      <realisation>
+        <parameters>
+          <inParam id="InParameterDeclaration202309112015183519" name="logicalLink">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String">
+                <init value="LL_CEM_1A01_DoIP" />
+              </dataType>
+            </realisation>
+          </inParam>
+          <inParam id="InParameterDeclaration202311251941475403" name="codeInfos">
+            <specification>{"{CodeID:CEM000,CodeIDType:003,AlgorithmID:Common_5,DefaultValue:,ActualValue:341D676150}","{CodeID:CEM100,CodeIDType:000,AlgorithmID:Common_5,DefaultValue:,ActualValue:341D676151}","{CodeID:CEM009,CodeIDType:009,AlgorithmID:Common_5,DefaultValue:,ActualValue:341D676152}"}</specification>
+            <realisation>
+              <dataType xsi:type="List">
+                <itemType xsi:type="String" />
+              </dataType>
+            </realisation>
+          </inParam>
+          <inParam id="InParameterDeclaration202309201730270239" name="securityLevel">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </inParam>
+          <outParam id="OutParameterDeclaration202309201504002447" name="successful">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Boolean">
+                <init value="false" />
+              </dataType>
+            </realisation>
+          </outParam>
+          <outParam id="OutParameterDeclaration202309261030249634" name="msg">
+            <specification>输出结果信息，用于打印log</specification>
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </outParam>
+        </parameters>
+        <declarations>
+          <variable id="VariableDeclaration202309201759164044" name="mapSecurityLevel">
+            <specification>{"Unlocked_Level1":"000","Unlocked_Level2":"003","Unlocked_Level3":"005","Unlocked_Level9":"009","Unlocked_Level13":"019"}</specification>
+            <realisation>
+              <dataType xsi:type="Map">
+                <keyType xsi:type="String" />
+                <valueType xsi:type="String" />
+                <init>
+                  <keyType xsi:type="String" />
+                  <valueType xsi:type="String" />
+                  <items>
+                    <item>
+                      <key xsi:type="StringLiteral" value="&quot;Unlocked_Level1&quot;" />
+                      <value xsi:type="StringLiteral" value="&quot;000&quot;" />
+                    </item>
+                    <item>
+                      <key xsi:type="StringLiteral" value="&quot;Unlocked_Level2&quot;" />
+                      <value xsi:type="StringLiteral" value="&quot;003&quot;" />
+                    </item>
+                    <item>
+                      <key xsi:type="StringLiteral" value="&quot;Unlocked_Level3&quot;" />
+                      <value xsi:type="StringLiteral" value="&quot;005&quot;" />
+                    </item>
+                    <item>
+                      <key xsi:type="StringLiteral" value="&quot;Unlocked_Level9&quot;" />
+                      <value xsi:type="StringLiteral" value="&quot;009&quot;" />
+                    </item>
+                    <item>
+                      <key xsi:type="StringLiteral" value="&quot;Unlocked_Level13&quot;" />
+                      <value xsi:type="StringLiteral" value="&quot;019&quot;" />
+                    </item>
+                  </items>
+                </init>
+              </dataType>
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202309211619349511" name="mapCodeLevel">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Map">
+                <keyType xsi:type="String" />
+                <valueType xsi:type="String" />
+                <init>
+                  <keyType xsi:type="String" />
+                  <valueType xsi:type="String" />
+                  <items>
+                    <item>
+                      <key xsi:type="StringLiteral" value="&quot;000&quot;" />
+                      <value xsi:type="StringLiteral" value="&quot;Level1&quot;" />
+                    </item>
+                    <item>
+                      <key xsi:type="StringLiteral" value="&quot;003&quot;" />
+                      <value xsi:type="StringLiteral" value="&quot;Level2&quot;" />
+                    </item>
+                    <item>
+                      <key xsi:type="StringLiteral" value="&quot;005&quot;" />
+                      <value xsi:type="StringLiteral" value="&quot;Level3&quot;" />
+                    </item>
+                    <item>
+                      <key xsi:type="StringLiteral" value="&quot;009&quot;" />
+                      <value xsi:type="StringLiteral" value="&quot;Level9&quot;" />
+                    </item>
+                    <item>
+                      <key xsi:type="StringLiteral" value="&quot;019&quot;" />
+                      <value xsi:type="StringLiteral" value="&quot;Level13&quot;" />
+                    </item>
+                  </items>
+                </init>
+              </dataType>
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202309171042442085" name="codeInfo">
+            <specification />
+            <realisation>
+              <dataType xsi:type="dtype:Structure" structureType="CodeInfo" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202309201714531232" name="codeInfoString">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202309201717226349" name="codeInfoElement">
+            <specification />
+            <realisation>
+              <dataType xsi:type="dtype:Structure" structureType="CodeInfo" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202309201718017303" name="codeInfoStructList">
+            <specification />
+            <realisation>
+              <dataType xsi:type="List">
+                <itemType xsi:type="dtype:Structure" structureType="CodeInfo" />
+              </dataType>
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202309211652114231" name="codeIdTypeString">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202311251914399367" name="comChannel_ecu">
+            <specification />
+            <realisation>
+              <dataType xsi:type="diag:ComChannel" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration202311251917240322" name="index_codeInfo">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Integer" />
+            </realisation>
+          </variable>
+        </declarations>
+        <flow>
+          <action id="Actionce151d450e394cb9927fcf129265f9f0" disabled="true">
+            <specification />
+            <realisation xsi:type="ListAppendItems">
+              <list name="codeInfos" />
+              <item xsi:type="StringLiteral" value="{CodeID:CEM000,CodeIDType:003,AlgorithmID:Common_5,DefaultValue:,ActualValue:341D676150}" />
+              <item xsi:type="StringLiteral" value="{CodeID:CEM100,CodeIDType:000,AlgorithmID:Common_5,DefaultValue:,ActualValue:341D676151}" />
+              <item xsi:type="StringLiteral" value="{CodeID:CEM009,CodeIDType:009,AlgorithmID:Common_5,DefaultValue:,ActualValue:341D676152}" />
+            </realisation>
+          </action>
+          <action id="Actionb7eae088a21d46dd85c0565364aba646">
+            <specification />
+            <realisation xsi:type="Assignment">
+              <result xsi:type="StringVariable" name="comChannel_ecu" />
+              <term xsi:type="diag:GetComChannel">
+                <diag:identifier xsi:type="StringValue" valueOf="logicalLink">
+                  <path />
+                </diag:identifier>
+              </term>
+            </realisation>
+          </action>
+          <loop>
+            <realisation>
+              <configuration id="Loopc370b8dd7e2549179e2ea2bc25d5a6f2">
+                <realisation xsi:type="ForEachLoop">
+                  <locator xsi:type="IntegerVariable" name="index_codeInfo" />
+                  <collection xsi:type="ListValue" valueOf="codeInfos">
+                    <path />
+                  </collection>
+                </realisation>
+              </configuration>
+              <flow>
+                <action id="Action2abe3605e32e40c0a96d322a34af681a">
+                  <specification />
+                  <realisation xsi:type="Assignment">
+                    <result xsi:type="StringVariable" name="codeInfoString" />
+                    <term xsi:type="ListValue" valueOf="codeInfos">
+                      <path>
+                        <stepByIndex xsi:type="IntegerValue" valueOf="index_codeInfo">
+                          <path />
+                        </stepByIndex>
+                      </path>
+                    </term>
+                  </realisation>
+                </action>
+                <action id="Action4745d6c8d43a44d99e3c0c5d7c404504">
+                  <specification />
+                  <realisation xsi:type="ProcedureCall" procedure="JsonParseCodeInfo">
+                    <arguments>
+                      <inArg param="jsonCodeInfo">
+                        <term xsi:type="StringValue" valueOf="codeInfoString">
+                          <path />
+                        </term>
+                      </inArg>
+                      <outArg param="codeInfoStruct">
+                        <variable xsi:type="StringVariable" name="codeInfoElement" />
+                      </outArg>
+                    </arguments>
+                  </realisation>
+                </action>
+                <branch id="Branch942ba4bd76674ad08c25b5aeaddfd4c5">
+                  <realisation>
+                    <if>
+                      <condition>
+                        <specification />
+                        <realisation xsi:type="IsEqual">
+                          <term xsi:type="MapValue" valueOf="mapSecurityLevel">
+                            <path>
+                              <stepByName xsi:type="StringValue" valueOf="securityLevel">
+                                <path />
+                              </stepByName>
+                            </path>
+                          </term>
+                          <term xsi:type="dtype:StructureValue" valueOf="codeInfoElement">
+                            <dtype:path>
+                              <stepByName xsi:type="StringLiteral" value="codeIdType" />
+                            </dtype:path>
+                          </term>
+                        </realisation>
+                      </condition>
+                      <flow>
+                        <action id="Action6a980a1b4dfc48e7b680e95319c2117e" disabled="true">
+                          <specification />
+                          <realisation xsi:type="Assignment">
+                            <result xsi:type="StringVariable" name="codeInfo" />
+                            <term xsi:type="StringValue" valueOf="codeInfoElement">
+                              <path />
+                            </term>
+                          </realisation>
+                        </action>
+                        <action id="Action300ff75043bd4a0bb3151f3e8b560032">
+                          <specification />
+                          <realisation xsi:type="Assignment">
+                            <result xsi:type="StringVariable" name="codeInfo" />
+                            <term xsi:type="dtype:StructureCopy">
+                              <dtype:otherStructure xsi:type="dtype:StructureValue" valueOf="codeInfoElement">
+                                <dtype:path />
+                              </dtype:otherStructure>
+                            </term>
+                          </realisation>
+                        </action>
+                        <action id="Action72b3f83991ee4dea84d7c9eff8c37adc">
+                          <specification />
+                          <realisation xsi:type="Assignment">
+                            <result xsi:type="StringVariable" name="codeIdTypeString" />
+                            <term xsi:type="dtype:StructureValue" valueOf="codeInfoElement">
+                              <dtype:path>
+                                <stepByName xsi:type="StringLiteral" value="codeIdType" />
+                              </dtype:path>
+                            </term>
+                          </realisation>
+                        </action>
+                        <action id="Action959e6be3b6cb4e2d8ba72f24c1a90bbf">
+                          <specification />
+                          <realisation xsi:type="Assignment">
+                            <result xsi:type="StringVariable" name="codeInfo">
+                              <path>
+                                <stepByName xsi:type="StringLiteral" value="codeIdType" />
+                              </path>
+                            </result>
+                            <term xsi:type="MapValue" valueOf="mapCodeLevel">
+                              <path>
+                                <stepByName xsi:type="StringValue" valueOf="codeIdTypeString">
+                                  <path />
+                                </stepByName>
+                              </path>
+                            </term>
+                          </realisation>
+                        </action>
+                      </flow>
+                    </if>
+                  </realisation>
+                </branch>
+              </flow>
+            </realisation>
+          </loop>
+          <branch id="Branch5f81ae9cb7d74562ad6223f9952c1a92">
+            <realisation>
+              <if>
+                <condition>
+                  <specification />
+                  <realisation xsi:type="LogicNot">
+                    <term xsi:type="IsEqual">
+                      <term xsi:type="dtype:StructureValue" valueOf="codeInfo">
+                        <dtype:path>
+                          <stepByName xsi:type="StringLiteral" value="defaultValue" />
+                        </dtype:path>
+                      </term>
+                      <term xsi:type="StringLiteral" value="" />
+                    </term>
+                  </realisation>
+                </condition>
+                <flow>
+                  <action id="Action10660de8239447328c8d7406361076ff">
+                    <specification />
+                    <realisation xsi:type="ProcedureCall" procedure="imp315cfbbb67fabe0d863e36776a48dc9a:main">
+                      <arguments>
+                        <inArg param="level">
+                          <term xsi:type="dtype:StructureValue" valueOf="codeInfo">
+                            <dtype:path>
+                              <stepByName xsi:type="StringLiteral" value="codeIdType" />
+                            </dtype:path>
+                          </term>
+                        </inArg>
+                        <inArg param="comChannel">
+                          <term xsi:type="diag:ComChannelValue" valueOf="comChannel_ecu">
+                            <diag:path />
+                          </term>
+                        </inArg>
+                        <inArg param="pinCodeValue">
+                          <term xsi:type="dtype:StructureValue" valueOf="codeInfo">
+                            <dtype:path>
+                              <stepByName xsi:type="StringLiteral" value="defaultValue" />
+                            </dtype:path>
+                          </term>
+                        </inArg>
+                        <inArg param="algorithmId">
+                          <term xsi:type="dtype:StructureValue" valueOf="codeInfo">
+                            <dtype:path>
+                              <stepByName xsi:type="StringLiteral" value="algorithmID" />
+                            </dtype:path>
+                          </term>
+                        </inArg>
+                        <outArg param="successful">
+                          <variable xsi:type="StringVariable" name="successful" />
+                        </outArg>
+                      </arguments>
+                    </realisation>
+                  </action>
+                  <branch id="Branchdb8057281d69442ba01823f0cbdff04f">
+                    <realisation>
+                      <if>
+                        <condition>
+                          <specification />
+                          <realisation xsi:type="BooleanValue" valueOf="successful">
+                            <path />
+                          </realisation>
+                        </condition>
+                        <flow>
+                          <action id="Actionc899a73e87aa48a4882341db63f70c1d">
+                            <specification />
+                            <realisation xsi:type="Assignment">
+                              <result xsi:type="StringVariable" name="msg" />
+                              <term xsi:type="StringLiteral" value="Security Access Successful With Default Value !" />
+                            </realisation>
+                          </action>
+                          <return id="Return5fba6451a38141f5a27733cbaf1f2ec6">
+                            <metaData>
+                              <data key="BlockPositions" />
+                            </metaData>
+                          </return>
+                        </flow>
+                      </if>
+                    </realisation>
+                  </branch>
+                </flow>
+              </if>
+            </realisation>
+          </branch>
+          <branch id="Branch851d04f060b04b049e6d88a6bde3b205">
+            <realisation>
+              <if>
+                <condition>
+                  <specification />
+                  <realisation xsi:type="LogicNot">
+                    <term xsi:type="IsEqual">
+                      <term xsi:type="dtype:StructureValue" valueOf="codeInfo">
+                        <dtype:path>
+                          <stepByName xsi:type="StringLiteral" value="actualValue" />
+                        </dtype:path>
+                      </term>
+                      <term xsi:type="StringLiteral" value="" />
+                    </term>
+                  </realisation>
+                </condition>
+                <flow>
+                  <action id="Action57fb5711dfa0486e88c8586974ace82d">
+                    <specification />
+                    <realisation xsi:type="ProcedureCall" procedure="imp315cfbbb67fabe0d863e36776a48dc9a:main">
+                      <arguments>
+                        <inArg param="level">
+                          <term xsi:type="dtype:StructureValue" valueOf="codeInfo">
+                            <dtype:path>
+                              <stepByName xsi:type="StringLiteral" value="codeIdType" />
+                            </dtype:path>
+                          </term>
+                        </inArg>
+                        <inArg param="comChannel">
+                          <term xsi:type="diag:ComChannelValue" valueOf="comChannel_ecu">
+                            <diag:path />
+                          </term>
+                        </inArg>
+                        <inArg param="pinCodeValue">
+                          <term xsi:type="dtype:StructureValue" valueOf="codeInfo">
+                            <dtype:path>
+                              <stepByName xsi:type="StringLiteral" value="actualValue" />
+                            </dtype:path>
+                          </term>
+                        </inArg>
+                        <inArg param="algorithmId">
+                          <term xsi:type="dtype:StructureValue" valueOf="codeInfo">
+                            <dtype:path>
+                              <stepByName xsi:type="StringLiteral" value="algorithmID" />
+                            </dtype:path>
+                          </term>
+                        </inArg>
+                        <outArg param="successful">
+                          <variable xsi:type="StringVariable" name="successful" />
+                        </outArg>
+                      </arguments>
+                    </realisation>
+                  </action>
+                  <branch id="Branch19f1643f4b6e424cab21e28d58195281">
+                    <realisation>
+                      <if>
+                        <condition>
+                          <specification />
+                          <realisation xsi:type="BooleanValue" valueOf="successful">
+                            <path />
+                          </realisation>
+                        </condition>
+                        <flow>
+                          <action id="Actioned45e511913746b4966b9dffa86b7690">
+                            <specification />
+                            <realisation xsi:type="Assignment">
+                              <result xsi:type="StringVariable" name="msg" />
+                              <term xsi:type="StringLiteral" value="Security Access Successful With Actual Value !" />
+                            </realisation>
+                          </action>
+                          <return id="Returnea149f2ebf484c0f8d549180e30833a4">
+                            <metaData>
+                              <data key="BlockPositions" />
+                            </metaData>
+                          </return>
+                        </flow>
+                      </if>
+                    </realisation>
+                  </branch>
+                </flow>
+              </if>
+            </realisation>
+          </branch>
+          <action id="Actionb7b65bbd5e3f4f2282de4832912acdb5">
+            <specification />
+            <realisation xsi:type="Assignment">
+              <result xsi:type="StringVariable" name="msg" />
+              <term xsi:type="i18n:Translate">
+                <i18n:translationKey xsi:type="i18n:CreateTranslationKey">
+                  <i18n:textId xsi:type="StringLiteral" value="a992cf8de209d2e2dae6201e14932711" />
+                </i18n:translationKey>
+              </term>
+            </realisation>
+          </action>
+          <action id="Action3ee32499bfdd49439b81ef636a655f81">
+            <specification />
+            <realisation xsi:type="hmi:ConfirmDialog">
+              <hmi:title xsi:type="i18n:Translate">
+                <i18n:translationKey xsi:type="i18n:CreateTranslationKey">
+                  <i18n:textId xsi:type="StringLiteral" value="hint" />
+                </i18n:translationKey>
+              </hmi:title>
+              <hmi:message xsi:type="StringValue" valueOf="msg">
+                <path />
+              </hmi:message>
+              <hmi:messageType xsi:type="hmi:MessageTypeLiteral" value="ERROR">
+                <metaData>
+                  <data key="MessageType" />
+                </metaData>
+              </hmi:messageType>
+              <hmi:result name="" />
+            </realisation>
+          </action>
+        </flow>
+      </realisation>
+    </procedure>
+    <procedure id="Procedure202312041655477437" name="SA_Level2" visibility="PUBLIC">
+      <specification />
+      <realisation>
+        <parameters>
+          <inParam id="InParameterDeclaration202312070856478350" name="pinCodeInfo">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Map">
+                <keyType xsi:type="String" />
+                <valueType xsi:type="List">
+                  <itemType xsi:type="Map">
+                    <keyType xsi:type="String" />
+                    <valueType xsi:type="String" />
+                  </itemType>
+                </valueType>
+              </dataType>
+            </realisation>
+          </inParam>
+          <outParam id="OutParameterDeclaration37301697c7074b11b14047e32042e2d4" name="strMsg">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </outParam>
+          <outParam id="OutParameterDeclarationf6e50383928b4fbcbdda0eb5da354f5b" name="iStatus">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Integer">
+                <init value="-1" />
+              </dataType>
+            </realisation>
+          </outParam>
+          <outParam id="OutParameterDeclarationa73a4f77f2a94b508f3b74a44a352bee" name="bfNrcc">
+            <specification />
+            <realisation>
+              <dataType xsi:type="ByteField" />
+            </realisation>
+          </outParam>
+          <inParam id="InParameterDeclaration3f414f74889b4537a1b51202899fd719" name="logicalLink">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </inParam>
+        </parameters>
+        <declarations>
+          <variable id="VariableDeclaration202312070909468242" name="comChannel">
+            <specification />
+            <realisation>
+              <dataType xsi:type="diag:ComChannel" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration2cf89b05e7d24762b61bfd8112b81904" name="strDefaultValue">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclarationfd2ffbabf87f4d71806bd23065cdf9aa" name="bResult">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Boolean" />
+            </realisation>
+          </variable>
+        </declarations>
+        <flow>
+          <action id="Actionfb8e4860b1714ef69ad8ce7e6c422e47">
+            <specification />
+            <realisation xsi:type="ProcedureCall" procedure="imp0a91e7b588e837ef42f009b45982613b:GetCodeType_003">
+              <arguments>
+                <inArg param="logicalLink">
+                  <term xsi:type="StringValue" valueOf="logicalLink">
+                    <path />
+                  </term>
+                </inArg>
+                <inArg param="pinCodeInfo">
+                  <term xsi:type="MapValue" valueOf="pinCodeInfo">
+                    <path />
+                  </term>
+                </inArg>
+                <outArg param="b_result">
+                  <variable xsi:type="StringVariable" name="bResult" />
+                </outArg>
+                <outArg param="defaultValue">
+                  <variable xsi:type="StringVariable" name="strDefaultValue" />
+                </outArg>
+              </arguments>
+            </realisation>
+          </action>
+          <branch id="Branch1eb4799333004a02b9457dfc4013cdce">
+            <realisation>
+              <if>
+                <condition>
+                  <specification>Used for level 2, 03/04. Just use default value</specification>
+                  <realisation xsi:type="BooleanValue" valueOf="bResult">
+                    <path />
+                  </realisation>
+                </condition>
+                <flow>
+                  <action id="Actione62317f0b5194234907acdc492c68134">
+                    <specification />
+                    <realisation xsi:type="Assignment">
+                      <result xsi:type="StringVariable" name="comChannel" />
+                      <term xsi:type="diag:GetComChannel">
+                        <diag:identifier xsi:type="StringValue" valueOf="logicalLink">
+                          <path />
+                        </diag:identifier>
+                      </term>
+                    </realisation>
+                  </action>
+                  <action id="Action68985694fe264294a516e931da1b8a9e" disabled="true">
+                    <specification />
+                    <realisation xsi:type="ProcedureCall" procedure="imp9f11c978f53960250663392b21925d4d:SessionControl">
+                      <arguments>
+                        <inArg param="comChannel">
+                          <term xsi:type="diag:ComChannelValue" valueOf="comChannel">
+                            <diag:path />
+                          </term>
+                        </inArg>
+                        <inArg param="strSession">
+                          <term xsi:type="StringLiteral" value="Extended" />
+                        </inArg>
+                      </arguments>
+                    </realisation>
+                  </action>
+                  <action id="Action012b67a43899447791a3e7681fc89b63">
+                    <specification />
+                    <realisation xsi:type="ProcedureCall" procedure="imp9f11c978f53960250663392b21925d4d:SecAccess2">
+                      <arguments>
+                        <inArg param="comChannel">
+                          <term xsi:type="diag:ComChannelValue" valueOf="comChannel">
+                            <diag:path />
+                          </term>
+                        </inArg>
+                        <inArg param="strSecurityLevel">
+                          <term xsi:type="StringLiteral" value="Level2" />
+                        </inArg>
+                        <inArg param="strPinCode">
+                          <term xsi:type="StringValue" valueOf="strDefaultValue">
+                            <path />
+                          </term>
+                        </inArg>
+                        <outArg param="strMsg">
+                          <variable xsi:type="StringVariable" name="strMsg" />
+                        </outArg>
+                        <outArg param="iStatus">
+                          <variable xsi:type="IntegerVariable" name="iStatus" />
+                        </outArg>
+                        <outArg param="bfNrcc">
+                          <variable xsi:type="StringVariable" name="bfNrcc" />
+                        </outArg>
+                      </arguments>
+                    </realisation>
+                  </action>
+                  <action id="Action98c967196cdc457f86d867f3458341d9">
+                    <specification />
+                    <realisation xsi:type="diag:CloseComChannel">
+                      <diag:comChannel name="comChannel" />
+                    </realisation>
+                  </action>
+                </flow>
+              </if>
+            </realisation>
+          </branch>
+        </flow>
+      </realisation>
+    </procedure>
+    <procedure id="Procedure202312041655546500" name="SA_Level3" visibility="PUBLIC">
+      <specification />
+      <realisation>
+        <parameters>
+          <inParam id="InParameterDeclaration202312070856478350" name="pinCodeInfo">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Map">
+                <keyType xsi:type="String" />
+                <valueType xsi:type="List">
+                  <itemType xsi:type="Map">
+                    <keyType xsi:type="String" />
+                    <valueType xsi:type="String" />
+                  </itemType>
+                </valueType>
+              </dataType>
+            </realisation>
+          </inParam>
+          <outParam id="OutParameterDeclarationc8722ecd778c4f3692a91f56ba3f74c7" name="iStatus">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Integer">
+                <init value="-1" />
+              </dataType>
+            </realisation>
+          </outParam>
+          <outParam id="OutParameterDeclarationa22d980dd0fc4b5c9ad66a0f817d135a" name="strMsg">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </outParam>
+          <inParam id="InParameterDeclaration4f47c79038824de1b5c16dcc882b49a1" name="iWaitMsForRetry">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Integer">
+                <init value="1000" />
+              </dataType>
+            </realisation>
+          </inParam>
+          <outParam id="OutParameterDeclarationecb9924b95494a69a0376501ffbae34b" name="bfNrcc">
+            <specification />
+            <realisation>
+              <dataType xsi:type="ByteField" />
+            </realisation>
+          </outParam>
+          <inParam id="InParameterDeclarationb7c265a7cf604c9d923891bd12b2e8c6" name="logicalLink">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </inParam>
+        </parameters>
+        <declarations>
+          <variable id="VariableDeclaration202312070909468242" name="comChannel">
+            <specification />
+            <realisation>
+              <dataType xsi:type="diag:ComChannel" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration71da5c7989064ec8905827a86312144d" name="bValidCode">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Boolean">
+                <init value="false" />
+              </dataType>
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration2e7df25cd2b942b4bc6773bfd1024e63" name="strDefaultValue">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </variable>
+          <variable id="VariableDeclaration9318dcba1c514bd295fd774780cd4aea" name="strActualValue">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </variable>
+        </declarations>
+        <flow>
+          <action id="Actione62317f0b5194234907acdc492c68134">
+            <specification />
+            <realisation xsi:type="Assignment">
+              <result xsi:type="StringVariable" name="comChannel" />
+              <term xsi:type="diag:GetComChannel">
+                <diag:identifier xsi:type="StringValue" valueOf="logicalLink">
+                  <path />
+                </diag:identifier>
+              </term>
+            </realisation>
+          </action>
+          <action id="Action832e84849c474bbf9bd87ec5963e5928" disabled="true">
+            <specification />
+            <realisation xsi:type="ProcedureCall" procedure="imp9f11c978f53960250663392b21925d4d:SessionControl">
+              <arguments>
+                <inArg param="comChannel">
+                  <term xsi:type="diag:ComChannelValue" valueOf="comChannel">
+                    <diag:path />
+                  </term>
+                </inArg>
+                <inArg param="strSession">
+                  <term xsi:type="StringLiteral" value="Extended" />
+                </inArg>
+              </arguments>
+            </realisation>
+          </action>
+          <action id="Actionb2cb73d29b544ad4bbf6201fbcccd71f">
+            <specification />
+            <realisation xsi:type="ProcedureCall" procedure="imp0a91e7b588e837ef42f009b45982613b:GetCodeType_000">
+              <arguments>
+                <inArg param="logicalLink">
+                  <term xsi:type="StringValue" valueOf="logicalLink">
+                    <path />
+                  </term>
+                </inArg>
+                <inArg param="pinCodeInfo">
+                  <term xsi:type="MapValue" valueOf="pinCodeInfo">
+                    <path />
+                  </term>
+                </inArg>
+                <outArg param="b_result">
+                  <variable xsi:type="StringVariable" name="bValidCode" />
+                </outArg>
+                <outArg param="actualValue">
+                  <variable xsi:type="StringVariable" name="strActualValue" />
+                </outArg>
+              </arguments>
+            </realisation>
+          </action>
+          <branch id="Branchf539659d4b9149e5b8d7cd74a2d0c5ec">
+            <realisation>
+              <if>
+                <condition>
+                  <specification />
+                  <realisation xsi:type="BooleanValue" valueOf="bValidCode">
+                    <path />
+                  </realisation>
+                </condition>
+                <flow>
+                  <action id="Action3fda14854d6047ba8247b07e585b3f78">
+                    <specification />
+                    <realisation xsi:type="ProcedureCall" procedure="imp9f11c978f53960250663392b21925d4d:SecAccess2">
+                      <arguments>
+                        <inArg param="comChannel">
+                          <term xsi:type="diag:ComChannelValue" valueOf="comChannel">
+                            <diag:path />
+                          </term>
+                        </inArg>
+                        <inArg param="strSecurityLevel">
+                          <term xsi:type="StringLiteral" value="Level3" />
+                        </inArg>
+                        <inArg param="strPinCode">
+                          <term xsi:type="StringValue" valueOf="strActualValue">
+                            <path />
+                          </term>
+                        </inArg>
+                        <outArg param="strMsg">
+                          <variable xsi:type="StringVariable" name="strMsg" />
+                        </outArg>
+                        <outArg param="iStatus">
+                          <variable xsi:type="IntegerVariable" name="iStatus" />
+                        </outArg>
+                        <outArg param="bfNrcc">
+                          <variable xsi:type="StringVariable" name="bfNrcc" />
+                        </outArg>
+                      </arguments>
+                    </realisation>
+                  </action>
+                  <branch id="Branch69627f5016c1408f86ba3a237732adb8">
+                    <realisation>
+                      <if>
+                        <condition>
+                          <specification />
+                          <realisation xsi:type="IsEqual">
+                            <term xsi:type="IntegerValue" valueOf="iStatus">
+                              <path />
+                            </term>
+                            <term xsi:type="IntegerLiteral" value="0" />
+                          </realisation>
+                        </condition>
+                        <flow>
+                          <action id="Action63da725ccc9b475294b9576eb11a7d39">
+                            <specification />
+                            <realisation xsi:type="diag:CloseComChannel">
+                              <diag:comChannel name="comChannel" />
+                            </realisation>
+                          </action>
+                          <return id="Return5571f119691c46949054cd030e236ab8">
+                            <metaData>
+                              <data key="BlockPositions" />
+                            </metaData>
+                          </return>
+                        </flow>
+                      </if>
+                    </realisation>
+                  </branch>
+                </flow>
+              </if>
+            </realisation>
+          </branch>
+          <action id="Actionfb8e4860b1714ef69ad8ce7e6c422e47">
+            <specification />
+            <realisation xsi:type="ProcedureCall" procedure="imp0a91e7b588e837ef42f009b45982613b:GetCodeType_005">
+              <arguments>
+                <inArg param="logicalLink">
+                  <term xsi:type="StringValue" valueOf="logicalLink">
+                    <path />
+                  </term>
+                </inArg>
+                <inArg param="pinCodeInfo">
+                  <term xsi:type="MapValue" valueOf="pinCodeInfo">
+                    <path />
+                  </term>
+                </inArg>
+                <outArg param="b_result">
+                  <variable xsi:type="StringVariable" name="bValidCode" />
+                </outArg>
+                <outArg param="defaultValue">
+                  <variable xsi:type="StringVariable" name="strDefaultValue" />
+                </outArg>
+              </arguments>
+            </realisation>
+          </action>
+          <branch id="Branch1eb4799333004a02b9457dfc4013cdce">
+            <realisation>
+              <if>
+                <condition>
+                  <specification>Used for level 2, 03/04. Just use default value</specification>
+                  <realisation xsi:type="BooleanValue" valueOf="bValidCode">
+                    <path />
+                  </realisation>
+                </condition>
+                <flow>
+                  <action id="Action51e5f22fa13a4858a539a88867bf3e01">
+                    <specification />
+                    <realisation xsi:type="event:WaitForEvent">
+                      <event:source xsi:type="event:TimerExpiredEventSource">
+                        <event:timeout xsi:type="IntegerValue" valueOf="iWaitMsForRetry">
+                          <path />
+                        </event:timeout>
+                      </event:source>
+                      <event:event name="" />
+                    </realisation>
+                  </action>
+                  <action id="Action012b67a43899447791a3e7681fc89b63">
+                    <specification />
+                    <realisation xsi:type="ProcedureCall" procedure="imp9f11c978f53960250663392b21925d4d:SecAccess2">
+                      <arguments>
+                        <inArg param="comChannel">
+                          <term xsi:type="diag:ComChannelValue" valueOf="comChannel">
+                            <diag:path />
+                          </term>
+                        </inArg>
+                        <inArg param="strSecurityLevel">
+                          <term xsi:type="StringLiteral" value="Level3" />
+                        </inArg>
+                        <inArg param="strPinCode">
+                          <term xsi:type="StringValue" valueOf="strDefaultValue">
+                            <path />
+                          </term>
+                        </inArg>
+                        <outArg param="strMsg">
+                          <variable xsi:type="StringVariable" name="strMsg" />
+                        </outArg>
+                        <outArg param="iStatus">
+                          <variable xsi:type="IntegerVariable" name="iStatus" />
+                        </outArg>
+                        <outArg param="bfNrcc">
+                          <variable xsi:type="StringVariable" name="bfNrcc" />
+                        </outArg>
+                      </arguments>
+                    </realisation>
+                  </action>
+                </flow>
+              </if>
+            </realisation>
+          </branch>
+          <action id="Action1b6f650a34e14437bdf46c7968850aea">
+            <specification />
+            <realisation xsi:type="diag:CloseComChannel">
+              <diag:comChannel name="comChannel" />
+            </realisation>
+          </action>
+        </flow>
+      </realisation>
+    </procedure>
+    <procedure id="Procedure0add781b5f3c4a65b2d0d91eb5fa7f11" name="ExtendedSession" visibility="PUBLIC">
+      <specification />
+      <realisation>
+        <parameters>
+          <inParam id="InParameterDeclarationd34ad8c84c29418a8ff881b5b194b21f" name="logicalLink">
+            <specification />
+            <realisation>
+              <dataType xsi:type="String" />
+            </realisation>
+          </inParam>
+          <outParam id="OutParameterDeclaration4ba07ee40ebf40e387492d03da25f362" name="iStatus">
+            <specification />
+            <realisation>
+              <dataType xsi:type="Integer">
+                <init value="-1" />
+              </dataType>
+            </realisation>
+          </outParam>
+        </parameters>
+        <declarations>
+          <variable id="VariableDeclaration4052ef421b1146c19a0ee89fc2cb24ea" name="comChannel">
+            <specification />
+            <realisation>
+              <dataType xsi:type="diag:ComChannel" />
+            </realisation>
+          </variable>
+        </declarations>
+        <flow>
+          <action id="Action96a2e1cc69474ef7b317f1982bd0a777">
+            <specification />
+            <realisation xsi:type="Assignment">
+              <result xsi:type="StringVariable" name="comChannel" />
+              <term xsi:type="diag:GetComChannel">
+                <diag:identifier xsi:type="StringValue" valueOf="logicalLink">
+                  <path />
+                </diag:identifier>
+              </term>
+            </realisation>
+          </action>
+          <action id="Action947d4ba09a8b46849df0df55d236b2ba">
+            <specification />
+            <realisation xsi:type="ProcedureCall" procedure="imp9f11c978f53960250663392b21925d4d:SessionControl">
+              <arguments>
+                <inArg param="comChannel">
+                  <term xsi:type="diag:ComChannelValue" valueOf="comChannel">
+                    <diag:path />
+                  </term>
+                </inArg>
+                <inArg param="strSession">
+                  <term xsi:type="StringLiteral" value="extendedDiagnosticSession" />
+                </inArg>
+                <outArg param="iStatus">
+                  <variable xsi:type="IntegerVariable" name="iStatus" />
+                </outArg>
+              </arguments>
+            </realisation>
+          </action>
+          <action id="Actiond64feee5bc2a45e3bb9d089acf6952a2">
+            <specification />
+            <realisation xsi:type="diag:CloseComChannel">
+              <diag:comChannel name="comChannel" />
+            </realisation>
+          </action>
+        </flow>
+      </realisation>
+    </procedure>
+  </procedures>
+</otx>
