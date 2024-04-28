@@ -41,6 +41,7 @@ namespace treelist
             this.imageCollection1 = new DevExpress.Utils.ImageCollection(this.components);
             this.panelControl2 = new DevExpress.XtraEditors.PanelControl();
             this.LoadXmlButton = new System.Windows.Forms.Button();
+            this.button1 = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.panelControl1)).BeginInit();
             this.panelControl1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.treeList1)).BeginInit();
@@ -55,7 +56,7 @@ namespace treelist
             this.panelControl1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panelControl1.Location = new System.Drawing.Point(0, 0);
             this.panelControl1.Name = "panelControl1";
-            this.panelControl1.Size = new System.Drawing.Size(433, 426);
+            this.panelControl1.Size = new System.Drawing.Size(433, 405);
             this.panelControl1.TabIndex = 0;
             // 
             // treeList1
@@ -63,15 +64,14 @@ namespace treelist
             this.treeList1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.treeList1.Location = new System.Drawing.Point(2, 2);
             this.treeList1.Name = "treeList1";
-            this.treeList1.OptionsBehavior.Editable = true;
-            treeList1.OptionsFind.AllowFindPanel = true;
-            treeList1.OptionsFind.AlwaysVisible = true; // 如果你希望搜索面板始终可见
+            this.treeList1.OptionsBehavior.Editable = false;
+            this.treeList1.OptionsFind.AlwaysVisible = true;
             this.treeList1.OptionsView.CheckBoxStyle = DevExpress.XtraTreeList.DefaultNodeCheckBoxStyle.Check;
             this.treeList1.SelectImageList = this.imageCollection1;
-            this.treeList1.Size = new System.Drawing.Size(429, 422);
+            this.treeList1.Size = new System.Drawing.Size(429, 401);
             this.treeList1.TabIndex = 0;
-            treeList1.CustomDrawNodeCell += new DevExpress.XtraTreeList.CustomDrawNodeCellEventHandler(this.treeList1_CustomDrawNodeCell);//文件名颜色设置
             this.treeList1.FocusedNodeChanged += new DevExpress.XtraTreeList.FocusedNodeChangedEventHandler(this.treeList1_FocusedNodeChanged);
+            this.treeList1.CustomDrawNodeCell += new DevExpress.XtraTreeList.CustomDrawNodeCellEventHandler(this.treeList1_CustomDrawNodeCell);
             // 
             // imageCollection1
             // 
@@ -82,9 +82,10 @@ namespace treelist
             // 
             // panelControl2
             // 
+            this.panelControl2.Controls.Add(this.button1);
             this.panelControl2.Controls.Add(this.LoadXmlButton);
             this.panelControl2.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panelControl2.Location = new System.Drawing.Point(0, 376);
+            this.panelControl2.Location = new System.Drawing.Point(0, 355);
             this.panelControl2.Name = "panelControl2";
             this.panelControl2.Size = new System.Drawing.Size(433, 50);
             this.panelControl2.TabIndex = 1;
@@ -100,11 +101,21 @@ namespace treelist
             this.LoadXmlButton.UseVisualStyleBackColor = true;
             this.LoadXmlButton.Click += new System.EventHandler(this.LoadXmlButton_Click);
             // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(346, 14);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.TabIndex = 1;
+            this.button1.Text = "button1";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 14F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(433, 426);
+            this.ClientSize = new System.Drawing.Size(433, 405);
             this.Controls.Add(this.panelControl2);
             this.Controls.Add(this.panelControl1);
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
@@ -127,6 +138,7 @@ namespace treelist
         private DevExpress.XtraEditors.PanelControl panelControl2;
         private System.Windows.Forms.Button LoadXmlButton;
         private DevExpress.Utils.ImageCollection imageCollection1;
+        private Button button1;
     }
 }
 

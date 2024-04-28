@@ -28,7 +28,9 @@ namespace treelist
     {
         private int nodeId = 0; // 用于生成唯一的节点ID
         // 在Form1类中定义一个列表作为数据源
-        private List<TreeListNodeModel> nodeList = new List<TreeListNodeModel>();
+        //private List<TreeListNodeModel> nodeList = new List<TreeListNodeModel>();
+        BindingList<TreeListNodeModel> nodeList = new BindingList<TreeListNodeModel>();
+
         public Form1()
         {
             
@@ -107,7 +109,8 @@ namespace treelist
             // 步骤1: 解析 JSON 文件，创建节点到 TreeListNode 的映射
             var jsonFilePath = Path.Combine(folderPath, "C:\\work\\ScriptList.json");
             var jsonEcuMapping = LoadJsonData(jsonFilePath);
-            List<TreeListNodeModel> nodeList = new List<TreeListNodeModel>();
+            //List<TreeListNodeModel> nodeList = new List<TreeListNodeModel>();
+            //BindingList<TreeListNodeModel> nodeList = new BindingList<TreeListNodeModel>();
             // 创建节点数据
             foreach (var script in jsonEcuMapping)
             {
@@ -248,7 +251,6 @@ namespace treelist
             // 使用 nodeList 作为数据源
             this.Invoke(new Action(() =>
             {
-
                 treeList1.DataSource = nodeList;
                 treeList1.KeyFieldName = "ID";
                 treeList1.ParentFieldName = "ParentID";
@@ -269,7 +271,7 @@ namespace treelist
             return xmlDoc.DocumentElement;
         }
 
-        private void PopulateXmlToTree(XmlNode xmlNode, TreeListNodeModel parentNode, List<TreeListNodeModel> nodeList)
+        private void PopulateXmlToTree(XmlNode xmlNode, TreeListNodeModel parentNode, BindingList<TreeListNodeModel> nodeList)
         {
             if (xmlNode.Name.Equals("procedure", StringComparison.OrdinalIgnoreCase) ||
                xmlNode.Name.Equals("inParam", StringComparison.OrdinalIgnoreCase) ||
@@ -285,7 +287,7 @@ namespace treelist
                     {
                         var nodeName = xmlNode.Attributes?["name"]?.InnerText ?? xmlNode.Name;
                         var TreeListNodeModel = new TreeListNodeModel
-                        {
+                        {                                                                                                                                                                                                                                                                                                                                                   
                             ID = nodeIdCounter++,
                             ParentID = parentNode.ID,  // 使用父节点的ID作为ParentID
                             Name = nodeName,
@@ -328,30 +330,6 @@ namespace treelist
                         }
                     }
                 }
-                else if (parentNode == null)
-                {
-                    if (xmlNode.NodeType == XmlNodeType.Element)
-                    {
-                        var nodeName = xmlNode.Attributes?["name"]?.InnerText ?? xmlNode.Name;
-                        var TreeListNodeModel = new TreeListNodeModel
-                        {
-                            ID = nodeIdCounter++,
-                            ParentID = parentNode.ID,  // 使用父节点的ID作为ParentID
-                            Name = nodeName,
-                            ImageIndex = folderIconIndex
-                            // 其他属性根据需要设置
-                        };
-                        nodeList.Add(TreeListNodeModel);
-                        foreach (XmlNode childNode in xmlNode.ChildNodes)
-                        {
-                            // 只处理元素类型的节点。
-                            if (childNode.NodeType == XmlNodeType.Element)
-                            {
-                                PopulateXmlToTree(childNode, parentNode, nodeList);
-                            }
-                        }
-                    }
-                }
             }
             else
             {
@@ -381,5 +359,36 @@ namespace treelist
             treeList1.RefreshDataSource();
         }
 
+        private void button1_Click(object sender, EventArgs e)
+        {
+            // 首先找到具有名称"Local"的节点的ID
+            var localNodeId = nodeList.FirstOrDefault(n => n.Name == "Local")?.ID;
+            if (localNodeId != null)
+            {
+                // 使用找到的ID来更新对应的节点
+                var nodeToUpdate = nodeList.FirstOrDefault(n => n.ID == localNodeId);
+                if (nodeToUpdate != null)
+                {
+                    nodeToUpdate.Name = "ceshi"; // 更新名称
+                                                 // 如果您的TreeListNodeModel实现了INotifyPropertyChanged接口，UI会自动响应这个变化
+                                                 // 如果没有实现，您需要手动通知TreeList控件，如下:
+                    //treeList1.RefreshDataSource(); // 这行代码会刷新整个数据源，如果节点多可能会有性能问题
+                }
+            }
+            else
+            {
+                localNodeId = nodeList.FirstOrDefault(n => n.Name == "ceshi")?.ID;
+                // 使用找到的ID来更新对应的节点
+                var nodeToUpdate = nodeList.FirstOrDefault(n => n.ID == localNodeId);
+                if (nodeToUpdate != null)
+                {
+                    nodeToUpdate.Name = "Local"; // 更新名称
+                                                 // 如果您的TreeListNodeModel实现了INotifyPropertyChanged接口，UI会自动响应这个变化
+                                                 // 如果没有实现，您需要手动通知TreeList控件，如下:
+                                                 //treeList1.RefreshDataSource(); // 这行代码会刷新整个数据源，如果节点多可能会有性能问题
+                }
+            }
+
+        }
     }
 }

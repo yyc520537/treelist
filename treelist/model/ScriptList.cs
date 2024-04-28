@@ -1,6 +1,7 @@
 ﻿using DevExpress.Utils;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -72,16 +73,83 @@ namespace treelist.model
         public DateTime updatedTime { get; set; }
     }
 
-    public class TreeListNodeModel
+    public class TreeListNodeModel : INotifyPropertyChanged
     {
-        public int ID { get; set; }
-        public int? ParentID { get; set; }
-        public string Name { get; set; }
-        public string FileTitle { get; set; }
-        public string GitRevision { get; set; }
-        public string GitDate { get; set; }
-        public int Group { get; set; }
-        public int ImageIndex { get; set; }
+        private int _id;
+        private int? _parentId;
+        private string _name;
+        private string _fileTitle;
+        private string _gitRevision;
+        private string _gitDate;
+        private int _group;
+        private int _imageIndex;
+
+        public int ID
+        {
+            get => _id;
+            set => SetProperty(ref _id, value);
+        }
+
+        public int? ParentID
+        {
+            get => _parentId;
+            set => SetProperty(ref _parentId, value);
+        }
+
+        public string Name
+        {
+            get => _name;
+            set => SetProperty(ref _name, value);
+        }
+
+        public string FileTitle
+        {
+            get => _fileTitle;
+            set => SetProperty(ref _fileTitle, value);
+        }
+
+        public string GitRevision
+        {
+            get => _gitRevision;
+            set => SetProperty(ref _gitRevision, value);
+        }
+
+        public string GitDate
+        {
+            get => _gitDate;
+            set => SetProperty(ref _gitDate, value);
+        }
+
+        public int Group
+        {
+            get => _group;
+            set => SetProperty(ref _group, value);
+        }
+
+        public int ImageIndex
+        {
+            get => _imageIndex;
+            set => SetProperty(ref _imageIndex, value);//在属性更改时触发 PropertyChanged 事件。
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged; //处理属性更改事件的方法的委托
+
+        protected virtual void OnPropertyChanged(string propertyName)//触发 PropertyChanged 事件（属性名）
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));//监听属性更改
+        }
+
+        //用于设置属性值，并在值更改时触发 PropertyChanged 事件。
+        //使用泛型以处理不同类型的属性，并使用 CallerMemberName 特性来自动获取属性名称
+        protected bool SetProperty<T>(ref T storage, T value, [System.Runtime.CompilerServices.CallerMemberName] string propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(storage, value))//比较旧值与新值
+                return false;////shuxingzhiweigenggai1
+
+            storage = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
     }
 
 

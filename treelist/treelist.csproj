@@ -37,6 +37,7 @@
     <Reference Include="DevExpress.Data.v22.1" />
     <Reference Include="DevExpress.Utils.v22.1" />
     <Reference Include="DevExpress.Sparkline.v22.1.Core" />
+    <Reference Include="DevExpress.XtraBars.v22.1, Version=22.1.4.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
     <Reference Include="DevExpress.XtraEditors.v22.1" />
     <Reference Include="DevExpress.Printing.v22.1.Core" />
     <Reference Include="DevExpress.Drawing.v22.1" />
@@ -93,9 +94,6 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Resources\a.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
