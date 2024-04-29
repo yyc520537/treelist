@@ -73,7 +73,7 @@ namespace treelist.model
         public DateTime updatedTime { get; set; }
     }
 
-    public class TreeListNodeModel : INotifyPropertyChanged
+    public class TreeListNodeModel : INotifyPropertyChanged   
     {
         private int _id;
         private int? _parentId;
@@ -83,6 +83,8 @@ namespace treelist.model
         private string _gitDate;
         private int _group;
         private int _imageIndex;
+        private string _fileid;
+        private string _title;
 
         public int ID
         {
@@ -132,11 +134,23 @@ namespace treelist.model
             set => SetProperty(ref _imageIndex, value);//在属性更改时触发 PropertyChanged 事件。
         }
 
+        public string FileId
+        {
+            get => _fileid;
+            set => SetProperty(ref _fileid, value);//在属性更改时触发 PropertyChanged 事件。
+        }
+
+        public string Title
+        {
+            get => _title;
+            set => SetProperty(ref _title, value);//在属性更改时触发 PropertyChanged 事件。
+        }
+
         public event PropertyChangedEventHandler PropertyChanged; //处理属性更改事件的方法的委托
 
         protected virtual void OnPropertyChanged(string propertyName)//触发 PropertyChanged 事件（属性名）
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));//监听属性更改
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));//属性更改
         }
 
         //用于设置属性值，并在值更改时触发 PropertyChanged 事件。
