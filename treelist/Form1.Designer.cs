@@ -57,14 +57,14 @@ namespace treelist
             // panelControl1
             // 
             this.panelControl1.Controls.Add(this.treeList1);
+            this.panelControl1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panelControl1.Location = new System.Drawing.Point(0, 0);
             this.panelControl1.Name = "panelControl1";
-            this.panelControl1.Size = new System.Drawing.Size(448, 344);
+            this.panelControl1.Size = new System.Drawing.Size(1308, 883);
             this.panelControl1.TabIndex = 0;
             // 
             // treeList1
             // 
-            this.treeList1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.treeList1.Location = new System.Drawing.Point(2, 2);
             this.treeList1.Name = "treeList1";
             this.treeList1.OptionsBehavior.Editable = false;
@@ -88,9 +88,9 @@ namespace treelist
             this.panelControl2.Controls.Add(this.button1);
             this.panelControl2.Controls.Add(this.LoadXmlButton);
             this.panelControl2.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panelControl2.Location = new System.Drawing.Point(0, 294);
+            this.panelControl2.Location = new System.Drawing.Point(0, 833);
             this.panelControl2.Name = "panelControl2";
-            this.panelControl2.Size = new System.Drawing.Size(932, 50);
+            this.panelControl2.Size = new System.Drawing.Size(1308, 50);
             this.panelControl2.TabIndex = 1;
             // 
             // button1
@@ -108,7 +108,7 @@ namespace treelist
             this.LoadXmlButton.Dock = System.Windows.Forms.DockStyle.Fill;
             this.LoadXmlButton.Location = new System.Drawing.Point(2, 2);
             this.LoadXmlButton.Name = "LoadXmlButton";
-            this.LoadXmlButton.Size = new System.Drawing.Size(928, 46);
+            this.LoadXmlButton.Size = new System.Drawing.Size(1304, 46);
             this.LoadXmlButton.TabIndex = 0;
             this.LoadXmlButton.Text = "选择XML文件";
             this.LoadXmlButton.UseVisualStyleBackColor = true;
@@ -119,18 +119,18 @@ namespace treelist
             this.panel3.Controls.Add(this.diagramControl1);
             this.panel3.Location = new System.Drawing.Point(452, 2);
             this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(468, 287);
+            this.panel3.Size = new System.Drawing.Size(851, 825);
             this.panel3.TabIndex = 2;
             // 
             // diagramControl1
             // 
-            this.diagramControl1.Location = new System.Drawing.Point(3, -2);
+            this.diagramControl1.Location = new System.Drawing.Point(3, 3);
             this.diagramControl1.Name = "diagramControl1";
             this.diagramControl1.OptionsBehavior.SelectedStencils = new DevExpress.Diagram.Core.StencilCollection(new string[] {
             "BasicShapes",
             "BasicFlowchartShapes"});
             this.diagramControl1.OptionsView.PaperKind = System.Drawing.Printing.PaperKind.Letter;
-            this.diagramControl1.Size = new System.Drawing.Size(465, 289);
+            this.diagramControl1.Size = new System.Drawing.Size(845, 822);
             this.diagramControl1.TabIndex = 0;
             this.diagramControl1.Text = "diagramControl1";
             // 
@@ -138,7 +138,7 @@ namespace treelist
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 14F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(932, 344);
+            this.ClientSize = new System.Drawing.Size(1308, 883);
             this.Controls.Add(this.panel3);
             this.Controls.Add(this.panelControl2);
             this.Controls.Add(this.panelControl1);

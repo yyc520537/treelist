@@ -1,4 +1,5 @@
 ﻿using DevExpress.Export.Xl;
+using DevExpress.Utils;
 using DevExpress.XtraDiagram;
 using DevExpress.XtraEditors.Filtering;
 using DevExpress.XtraPrinting.Native.WebClientUIControl;
@@ -118,7 +119,7 @@ namespace treelist
                 Task.Run(() => LoadFiles(selectedFolder)); 
                     // 异步执行加载和解析操作
                 ProcessXmlDirectory(selectedFolder);
-                DisplayDependencies(diagramControl1, fileDependencies);
+                DisplayDependenciesAsync(diagramControl1, fileDependencies);
 
 
             }
@@ -627,7 +628,9 @@ namespace treelist
                     {
                         // 去除前三个字符 'imp'
                         var trimmedPrefix = prefix.Substring(3);
+                       
                         prefixes.Add(trimmedPrefix);
+
                     }
                 }
             }
@@ -673,48 +676,90 @@ namespace treelist
         //}
 
 
-        private void DisplayDependencies(DiagramControl diagram, Dictionary<string, List<string>> dependencies)
+        private async Task DisplayDependenciesAsync(DiagramControl diagram, Dictionary<string, List<string>> dependencies)
         {
-            diagram.BeginUpdate();  // 开始更新控件，这有助于性能优化
-            try
+            await Task.Run(() =>
             {
-                // 清除现有的图形元素
-                diagram.Items.Clear();
+                var itemsToAdd = new List<DiagramItem>();
+                var connectorsToAdd = new List<DiagramConnector>();
+                var nodePositions = new Dictionary<string, (float X, float Y)>();
 
-                Dictionary<string, DiagramShape> createdNodes = new Dictionary<string, DiagramShape>();
+                CalculateNodePositions(dependencies, nodePositions);
 
-                foreach (var file in dependencies)
+                // 在后台线程中创建图形元素
+                foreach (var dep in dependencies)
                 {
-                    if (!createdNodes.TryGetValue(file.Key, out var sourceNode))
+                    var sourceNode = GetOrCreateDiagramNode(dep.Key, nodePositions[dep.Key], itemsToAdd);
+                    foreach (var child in dep.Value)
                     {
-                        // 创建 source 节点
-                        sourceNode = new DiagramShape() { Content = file.Key };
-                        diagram.Items.Add(sourceNode);
-                        createdNodes[file.Key] = sourceNode;
-                    }
-
-                    foreach (var dependentFile in file.Value)
-                    {
-                        if (!createdNodes.TryGetValue(dependentFile, out var targetNode))
-                        {
-                            // 创建 target 节点
-                            targetNode = new DiagramShape() { Content = dependentFile };
-                            diagram.Items.Add(targetNode);
-                            createdNodes[dependentFile] = targetNode;
-                        }
-
-                        // 创建连接器
-                        var connector = new DiagramConnector() { BeginItem = sourceNode, EndItem = targetNode };
-                        diagram.Items.Add(connector);
+                        var childNode = GetOrCreateDiagramNode(child, nodePositions[child], itemsToAdd);
+                        var connector = new DiagramConnector { BeginItem = sourceNode, EndItem = childNode };
+                        connectorsToAdd.Add(connector);
                     }
                 }
-            }
-            finally
+
+                // 在UI线程中更新图表
+                diagram.Invoke((MethodInvoker)delegate
+                {
+                    diagram.BeginUpdate();
+                    try
+                    {
+                        diagram.Items.Clear();
+                        foreach (var item in itemsToAdd)
+                        {
+                            diagram.Items.Add(item);
+                        }
+                        foreach (var connector in connectorsToAdd)
+                        {
+                            diagram.Items.Add(connector);
+                        }
+                    }
+                    finally
+                    {
+                        diagram.EndUpdate();
+                    }
+                });
+            });
+        }
+
+        private void CalculateNodePositions(Dictionary<string, List<string>> dependencies, Dictionary<string, (float X, float Y)> nodePositions)
+        {
+            float x = 10f, y = 10f;
+            foreach (var dep in dependencies)
             {
-                diagram.EndUpdate();  // 结束更新控件
+                if (!nodePositions.ContainsKey(dep.Key))
+                {
+                    nodePositions[dep.Key] = (x, y);
+                    y += 100f; // Adjust for your layout
+                }
+
+                foreach (var child in dep.Value)
+                {
+                    if (!nodePositions.ContainsKey(child))
+                    {
+                        nodePositions[child] = (x + 150f, y); // Adjust for your layout
+                        y += 100f; // Adjust for your layout
+                    }
+                }
+                x += 300f; // Adjust for your layout
+                y = 10f; // Reset Y for next column
             }
         }
 
+        private DiagramShape GetOrCreateDiagramNode(string key, (float X, float Y) position, List<DiagramItem> itemsToAdd)
+        {
+            var existingNode = itemsToAdd.OfType<DiagramShape>().FirstOrDefault(s => s.Content.ToString() == key);
+            if (existingNode != null)
+                return existingNode;
+
+            var newNode = new DiagramShape
+            {
+                Content = key,
+                Position = new PointFloat(position.X, position.Y)
+            };
+            itemsToAdd.Add(newNode);
+            return newNode;
+        }
 
     }
 }
