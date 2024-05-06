@@ -1,4 +1,6 @@
-﻿using DevExpress.Export.Xl;
+﻿using DevExpress.Diagram.Core;
+using DevExpress.Diagram.Core.Layout;
+using DevExpress.Export.Xl;
 using DevExpress.Utils;
 using DevExpress.XtraDiagram;
 using DevExpress.XtraEditors.Filtering;
@@ -6,6 +8,7 @@ using DevExpress.XtraPrinting.Native.WebClientUIControl;
 using DevExpress.XtraTreeList;
 using DevExpress.XtraTreeList.Columns;
 using DevExpress.XtraTreeList.Nodes;
+using Microsoft.Azure.Management.ResourceManager.Fluent.Core.DAG;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
@@ -32,25 +35,15 @@ namespace treelist
     {
         private int nodeId = 0; // 用于生成唯一的节点ID
         // 在Form1类中定义一个列表作为数据源
-        //private List<TreeListNodeModel> nodeList = new List<TreeListNodeModel>();
         BindingList<TreeListNodeModel> nodeList = new BindingList<TreeListNodeModel>();
-        
+        Dictionary<string, List<string>> fileDependencies = new Dictionary<string, List<string>>();//存储关联信息
         public Form1()
         {
-            
             InitializeComponent();
             InitializeTreeList();
-            this.Load += new EventHandler(Form1_Load); // 添加窗体的 Load 事件处理程序
         }
 
-        private void Form1_Load(object sender, EventArgs e)
-        {
-            // 计算并设置panelControl1的底部Padding
-            int bottomPadding = this.panelControl2.Height;
-            this.panelControl1.Padding = new Padding(this.panelControl1.Padding.Left, this.panelControl1.Padding.Top, this.panelControl1.Padding.Right, bottomPadding);
-            // 确保树形列表控件填充其父控件，考虑到Padding
-            this.treeList1.Dock = DockStyle.Fill;
-        }
+
         /// <summary>
         /// 设置文件名颜色显示
         /// </summary>
@@ -114,19 +107,15 @@ namespace treelist
             if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
             {
                 string selectedFolder = folderBrowserDialog.SelectedPath;
-                
-                // 异步执行加载和解析操作
-                Task.Run(() => LoadFiles(selectedFolder)); 
+
+                // 异步执行加载和解析操作Task.Run(() =>
+                LoadFiles(selectedFolder); 
                     // 异步执行加载和解析操作
                 ProcessXmlDirectory(selectedFolder);
-                DisplayDependenciesAsync(diagramControl1, fileDependencies);
-
-
+                Task.Run(() => DisplayDependenciesAsync(diagramControl1, fileDependencies));
             }
-            
         }
         int nodeIdCounter = 1;
-
         /// <summary>
         /// treelist节点数据生成
         /// </summary>
@@ -136,8 +125,6 @@ namespace treelist
             // 步骤1: 解析 JSON 文件，创建节点到 TreeListNode 的映射
             var jsonFilePath = Path.Combine(folderPath, "C:\\work\\ScriptList.json");
             var jsonEcuMapping = LoadJsonData(jsonFilePath);
-            //List<TreeListNodeModel> nodeList = new List<TreeListNodeModel>();
-            //BindingList<TreeListNodeModel> nodeList = new BindingList<TreeListNodeModel>();
             // 创建节点数据
             foreach (var script in jsonEcuMapping)
             {
@@ -231,9 +218,6 @@ namespace treelist
                             Name = xmlFileName
                         };
                         nodeList.Add(aaa);
-                        //var xmlContent = LoadXmlDocument(xmlFile);
-                        //PopulateXmlToTree(xmlContent, aaa, nodeList);
-                        //ParseXmlUsingXmlReaderAndPopulateTree(xmlFile, aaa, nodeList);
                         LoadXmlAndPopulateTree1(xmlFile, aaa, nodeList);
                     }
                 }
@@ -255,9 +239,6 @@ namespace treelist
                                 Title = scriptDto.title
                             };
                             nodeList.Add(aaa);
-                            //var xmlContent = LoadXmlDocument(xmlFile);
-                            //PopulateXmlToTree(xmlContent, aaa, nodeList);
-                            //ParseXmlUsingXmlReaderAndPopulateTree(xmlFile, aaa, nodeList);
                             LoadXmlAndPopulateTree1(xmlFile, aaa, nodeList);
                         }
                     }
@@ -277,10 +258,7 @@ namespace treelist
                                 Title = scriptDto.title
                             };
                             nodeList.Add(aaa);
-                            //var xmlContent = LoadXmlDocument(xmlFile);
-                            //PopulateXmlToTree(xmlContent, aaa, nodeList);
                             LoadXmlAndPopulateTree1(xmlFile, aaa, nodeList);
-                            //ParseXmlUsingXmlReaderAndPopulateTree(xmlFile, aaa, nodeList);
                         }
                     }
                 }
@@ -304,7 +282,7 @@ namespace treelist
             string json = File.ReadAllText(jsonFilePath);
             return JsonConvert.DeserializeObject<List<ScriptList>>(json);
         }
-
+        #region 使用XmlDocument
         /// <summary>
         /// xml文件导入
         /// </summary>
@@ -395,6 +373,7 @@ namespace treelist
                 }
             }
         }
+        #endregion
 
         /// <summary>
         /// 测试按钮，用于修改nodelist列表中数据的值，观察treelist是否会实时更新
@@ -431,7 +410,7 @@ namespace treelist
 
         }
 
-
+        #region 使用XmlReader
         /// <summary>
         /// 使用XmlReader
         /// </summary>
@@ -537,8 +516,9 @@ namespace treelist
                 }
             }
         }
+        #endregion
 
-
+        #region 使用XDocument
         private void LoadXmlAndPopulateTree1(string xmlFilePath,TreeListNodeModel currentParentNode, BindingList<TreeListNodeModel> nodeList)
         {
             XDocument doc = XDocument.Load(xmlFilePath);
@@ -564,7 +544,7 @@ namespace treelist
                     var newNode = new TreeListNodeModel
                     {
                         ID = nodeIdCounter++,
-                        ParentID = parentNode?.ID, // 使用上一个节点的ID作为父ID，如果父节点为空，则此节点是顶级节点
+                        ParentID = parentNode?.ID, //使用上一个节点的ID作为父ID，如果父节点为空，则此节点是顶级节点
                         Name = childElement.Attribute("name")?.Value ?? nodeName,
                         Group = group,
                         ImageIndex = iconIndex
@@ -580,8 +560,13 @@ namespace treelist
                 }
             }
         }
+        #endregion
 
-
+        /// <summary>
+        /// treelist图标选择
+        /// </summary>
+        /// <param name="nodeName"></param>
+        /// <returns></returns>
         private int GetIconIndex(string nodeName)
         {
             switch (nodeName.ToLower())
@@ -596,6 +581,11 @@ namespace treelist
                     return imageCollection1.Images.IndexOf(imageCollection1.Images["a.png"]);
             }
         }
+        /// <summary>
+        /// 节点分组为实现节点排序
+        /// </summary>
+        /// <param name="nodeName"></param>
+        /// <returns></returns>
         private int GetGroupByNodeName(string nodeName)
         {
             // 根据节点名称获取对应的组索引
@@ -612,12 +602,17 @@ namespace treelist
             }
         }
 
-        // 方法来解析单个XML文件并提取所有'import'标签的'prefix'属性
+        /// <summary>
+        /// 解析单个XML文件并提取所有'import'标签的'prefix'属性
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
         private List<string> ParseXmlForImports(string filePath)
         {
             XDocument doc = XDocument.Load(filePath);
             List<string> prefixes = new List<string>();
-
+            string trimmedPrefix = null;
+            List<TreeListNodeModel> nodeList1 = nodeList.ToList();
             // 遍历所有元素，只处理 <import> 标签
             foreach (XElement element in doc.Descendants())
             {
@@ -627,9 +622,12 @@ namespace treelist
                     if (!string.IsNullOrEmpty(prefix) && prefix.Length > 3)
                     {
                         // 去除前三个字符 'imp'
-                        var trimmedPrefix = prefix.Substring(3);
-                       
-                        prefixes.Add(trimmedPrefix);
+                        trimmedPrefix = prefix.Substring(3);
+                        var aaa = nodeList.Where(n => n.FileId == trimmedPrefix).Select(n => n.FileTitle).FirstOrDefault();
+                        if (aaa != null)
+                        {
+                            prefixes.Add(aaa);
+                        }
 
                     }
                 }
@@ -638,13 +636,15 @@ namespace treelist
             return prefixes;
         }
 
-        Dictionary<string, List<string>> fileDependencies = new Dictionary<string, List<string>>();
-        // 方法来遍历目录并处理每个XML文件
+        /// <summary>
+        /// 遍历目录并处理每个XML文件
+        /// </summary>
+        /// <param name="folderPath"></param>
+        /// <returns></returns>
         public Dictionary<string, List<string>> ProcessXmlDirectory(string folderPath)
         {
 
             // 获取所有XML文件
-            //var xmlFiles = Directory.GetFiles(directoryPath, "*.xml", SearchOption.AllDirectories);
             var xmlFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories)
                 .Where(file => file.EndsWith(".otx", StringComparison.OrdinalIgnoreCase) || file.EndsWith(".zotx", StringComparison.OrdinalIgnoreCase));
             foreach (var file in xmlFiles)
@@ -653,28 +653,55 @@ namespace treelist
                 var prefixes = ParseXmlForImports(file);
                 fileDependencies[fileName] = prefixes;
             }
-
             return fileDependencies;
         }
 
-        //public Dictionary<string, List<string>> bidui(Dictionary<string, List<string>> fileDependencies, BindingList<TreeListNodeModel> nodeList)
+        #region 实现关联图绘制，因卡顿暂时未使用
+        //private async Task DisplayDependenciesAsync(DiagramControl diagram, Dictionary<string, List<string>> dependencies)
         //{
-
-        //    Dictionary<string, List<string>> fileDependencies = new Dictionary<string, List<string>>();
-        //    // 获取所有XML文件
-        //    //var xmlFiles = Directory.GetFiles(directoryPath, "*.xml", SearchOption.AllDirectories);
-        //    var xmlFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories)
-        //        .Where(file => file.EndsWith(".otx", StringComparison.OrdinalIgnoreCase) || file.EndsWith(".zotx", StringComparison.OrdinalIgnoreCase));
-        //    foreach (var file in xmlFiles)
+        //    await Task.Run(() =>
         //    {
-        //        var fileName = Path.GetFileName(file);
-        //        var prefixes = ParseXmlForImports(file);
-        //        fileDependencies[fileName] = prefixes;
-        //    }
+        //        var itemsToAdd = new List<DiagramItem>();
+        //        var connectorsToAdd = new List<DiagramConnector>();
+        //        var nodePositions = new Dictionary<string, (float X, float Y)>();
 
-        //    return fileDependencies;
+        //        CalculateNodePositions(dependencies, nodePositions);
+
+        //        // 在后台线程中创建图形元素
+        //        foreach (var dep in dependencies)
+        //        {
+        //            var sourceNode = GetOrCreateDiagramNode(dep.Key, nodePositions[dep.Key], itemsToAdd);
+        //            foreach (var child in dep.Value)
+        //            {
+        //                var childNode = GetOrCreateDiagramNode(child, nodePositions[child], itemsToAdd);
+        //                var connector = new DiagramConnector { BeginItem = sourceNode, EndItem = childNode };
+        //                connectorsToAdd.Add(connector);
+        //            }
+        //        }
+
+        //        // 在UI线程中更新图表
+        //        diagram.Invoke((MethodInvoker)delegate
+        //        {
+        //            diagram.BeginUpdate();
+        //            try
+        //            {
+        //                diagram.Items.Clear();
+        //                foreach (var item in itemsToAdd)
+        //                {
+        //                    diagram.Items.Add(item);
+        //                }
+        //                foreach (var connector in connectorsToAdd)
+        //                {
+        //                    diagram.Items.Add(connector);
+        //                }
+        //            }
+        //            finally
+        //            {
+        //                diagram.EndUpdate();
+        //            }
+        //        });
+        //    });
         //}
-
 
         private async Task DisplayDependenciesAsync(DiagramControl diagram, Dictionary<string, List<string>> dependencies)
         {
@@ -686,7 +713,6 @@ namespace treelist
 
                 CalculateNodePositions(dependencies, nodePositions);
 
-                // 在后台线程中创建图形元素
                 foreach (var dep in dependencies)
                 {
                     var sourceNode = GetOrCreateDiagramNode(dep.Key, nodePositions[dep.Key], itemsToAdd);
@@ -698,7 +724,6 @@ namespace treelist
                     }
                 }
 
-                // 在UI线程中更新图表
                 diagram.Invoke((MethodInvoker)delegate
                 {
                     diagram.BeginUpdate();
@@ -722,29 +747,63 @@ namespace treelist
             });
         }
 
+        ///// <summary>
+        ///// 绘制节点
+        ///// </summary>
+        ///// <param name="dependencies"></param>
+        ///// <param name="nodePositions"></param>
+        //private void CalculateNodePositions(Dictionary<string, List<string>> dependencies, Dictionary<string, (float X, float Y)> nodePositions)
+        //{
+        //    float x = 10f, y = 10f;
+        //    foreach (var dep in dependencies)
+        //    {
+        //        if (!nodePositions.ContainsKey(dep.Key))
+        //        {
+        //            nodePositions[dep.Key] = (x, y);
+        //            y += 10f;
+        //        }
+
+        //        foreach (var child in dep.Value)
+        //        {
+        //            if (!nodePositions.ContainsKey(child))
+        //            {
+        //                nodePositions[child] = (x + 15f, y);
+        //                y += 10f;
+        //            }
+        //        }
+        //        x += 30f;
+        //        y = 10f;
+        //    }
+        //}
+
         private void CalculateNodePositions(Dictionary<string, List<string>> dependencies, Dictionary<string, (float X, float Y)> nodePositions)
         {
-            float x = 10f, y = 10f;
-            foreach (var dep in dependencies)
+            int columnWidth = 200;  // 列宽，增加间距以减少拥挤
+            int rowHeight = 100;   // 行高
+            int x = 10, y = 10;    // 初始坐标
+
+            foreach (var dep in dependencies.Keys)
             {
-                if (!nodePositions.ContainsKey(dep.Key))
+                if (!nodePositions.ContainsKey(dep))
                 {
-                    nodePositions[dep.Key] = (x, y);
-                    y += 100f; // Adjust for your layout
+                    nodePositions[dep] = (x, y);
+                    x += columnWidth;  // 移动到下一列
                 }
 
-                foreach (var child in dep.Value)
+                int childY = y + rowHeight; // 子节点开始的y坐标
+                foreach (var child in dependencies[dep])
                 {
                     if (!nodePositions.ContainsKey(child))
                     {
-                        nodePositions[child] = (x + 150f, y); // Adjust for your layout
-                        y += 100f; // Adjust for your layout
+                        nodePositions[child] = (x, childY);
+                        childY += rowHeight; // 每个子节点向下移动
                     }
                 }
-                x += 300f; // Adjust for your layout
-                y = 10f; // Reset Y for next column
+                y = childY + rowHeight;  // 更新y坐标到下一个主节点
+                x = 10; // 重置x坐标回到第一列
             }
         }
+
 
         private DiagramShape GetOrCreateDiagramNode(string key, (float X, float Y) position, List<DiagramItem> itemsToAdd)
         {
@@ -760,6 +819,8 @@ namespace treelist
             itemsToAdd.Add(newNode);
             return newNode;
         }
+        #endregion
+
 
     }
 }
