@@ -732,122 +732,192 @@ namespace treelist
         //    });
         //}
 
+        //private async Task DisplayDependenciesAsync(DiagramControl diagram, Dictionary<string, List<string>> dependencies)
+        //{
+        //    await Task.Run(() =>
+        //    {
+        //        var nodePositions = new Dictionary<string, (float X, float Y)>();
+        //        CalculateNodePositions(dependencies, nodePositions);
+
+        //        diagram.Invoke((MethodInvoker)delegate
+        //        {
+        //            diagram.BeginUpdate();
+        //            try
+        //            {
+        //                // 先清理再添加可能更稳妥
+        //                diagram.Items.Clear();
+
+        //                foreach (var dep in dependencies)
+        //                {
+        //                    var sourceNode = GetOrCreateDiagramNode(dep.Key, nodePositions[dep.Key], diagram);
+        //                    foreach (var child in dep.Value)
+        //                    {
+        //                        var childNode = GetOrCreateDiagramNode(child, nodePositions[child], diagram);
+        //                        var connector = new DiagramConnector { BeginItem = sourceNode, EndItem = childNode };
+        //                        diagram.Items.Add(connector); // 连接器添加应在节点添加之后
+        //                    }
+        //                }
+        //            }
+        //            finally
+        //            {
+        //                diagram.EndUpdate();
+        //            }
+        //        });
+
+        //    });
+        //}
+
         private async Task DisplayDependenciesAsync(DiagramControl diagram, Dictionary<string, List<string>> dependencies)
         {
+            var nodePositions = new Dictionary<string, (float X, float Y)>();
+            CalculateNodePositions(dependencies, nodePositions);
+
+            int batchSize = 100; // 减小批处理大小以减轻UI线程负担
+            List<Task> tasks = new List<Task>();
+
             await Task.Run(() =>
             {
-                var itemsToAdd = new List<DiagramItem>();
-                var connectorsToAdd = new List<DiagramConnector>();
-                var nodePositions = new Dictionary<string, (float X, float Y)>();
-
-                CalculateNodePositions(dependencies, nodePositions);
+                List<DiagramItem> tempItems = new List<DiagramItem>();
 
                 foreach (var dep in dependencies)
                 {
-                    var sourceNode = GetOrCreateDiagramNode(dep.Key, nodePositions[dep.Key], itemsToAdd);
+                    var sourceNode = GetOrCreateDiagramNode(dep.Key, nodePositions[dep.Key], diagram);
+                    var childNodes = new List<DiagramShape>();
+
                     foreach (var child in dep.Value)
                     {
-                        var childNode = GetOrCreateDiagramNode(child, nodePositions[child], itemsToAdd);
+                        var childNode = GetOrCreateDiagramNode(child, nodePositions[child], diagram);
+                        childNodes.Add(childNode);
                         var connector = new DiagramConnector { BeginItem = sourceNode, EndItem = childNode };
-                        connectorsToAdd.Add(connector);
+                        tempItems.Add(connector);
+                    }
+
+                    // 仅在UI线程添加节点
+                    diagram.Invoke((MethodInvoker)delegate
+                    {
+                        diagram.BeginUpdate();
+                        try
+                        {
+                            if (!diagram.Items.Contains(sourceNode))
+                                diagram.Items.Add(sourceNode);
+                            childNodes.ForEach(n => {
+                                if (!diagram.Items.Contains(n))
+                                    diagram.Items.Add(n);
+                            });
+                        }
+                        finally
+                        {
+                            diagram.EndUpdate();
+                        }
+                    });
+
+                    if (tempItems.Count >= batchSize)
+                    {
+                        var currentBatch = tempItems.ToList(); // 复制当前批次
+                        tempItems.Clear(); // 清空列表以开始新的批次
+                        tasks.Add(UpdateDiagramAsync(diagram, currentBatch));
                     }
                 }
 
-                diagram.Invoke((MethodInvoker)delegate
+                if (tempItems.Count > 0)
                 {
-                    diagram.BeginUpdate();
-                    try
-                    {
-                        diagram.Items.Clear();
-                        foreach (var item in itemsToAdd)
-                        {
-                            diagram.Items.Add(item);
-                        }
-                        foreach (var connector in connectorsToAdd)
-                        {
-                            diagram.Items.Add(connector);
-                        }
-                    }
-                    finally
-                    {
-                        diagram.EndUpdate();
-                    }
-                });
+                    tasks.Add(UpdateDiagramAsync(diagram, tempItems)); // 添加剩余的项
+                }
             });
+
+            await Task.WhenAll(tasks); // 等待所有批次完成
         }
 
-        ///// <summary>
-        ///// 绘制节点
-        ///// </summary>
-        ///// <param name="dependencies"></param>
-        ///// <param name="nodePositions"></param>
-        //private void CalculateNodePositions(Dictionary<string, List<string>> dependencies, Dictionary<string, (float X, float Y)> nodePositions)
-        //{
-        //    float x = 10f, y = 10f;
-        //    foreach (var dep in dependencies)
-        //    {
-        //        if (!nodePositions.ContainsKey(dep.Key))
-        //        {
-        //            nodePositions[dep.Key] = (x, y);
-        //            y += 10f;
-        //        }
+        private async Task UpdateDiagramAsync(DiagramControl diagram, List<DiagramItem> items)
+        {
+            await Task.Run(() => diagram.Invoke((MethodInvoker)delegate
+            {
+                diagram.BeginUpdate();
+                try
+                {
+                    items.ForEach(item => diagram.Items.Add(item));
+                }
+                finally
+                {
+                    diagram.EndUpdate();
+                }
+            }));
+        }
 
-        //        foreach (var child in dep.Value)
-        //        {
-        //            if (!nodePositions.ContainsKey(child))
-        //            {
-        //                nodePositions[child] = (x + 15f, y);
-        //                y += 10f;
-        //            }
-        //        }
-        //        x += 30f;
-        //        y = 10f;
-        //    }
-        //}
+
+
+        private DiagramShape GetOrCreateDiagramNode(string key, (float X, float Y) position, DiagramControl diagram)
+        {
+            var existingNode = diagram.Items.OfType<DiagramShape>().FirstOrDefault(s => s.Content.ToString() == key);
+            if (existingNode != null)
+                return existingNode;
+
+            return new DiagramShape
+            {
+                Content = key,
+                Position = new PointFloat(position.X, position.Y),
+                Size = new SizeF(100, 25) // 确保尺寸足够可见
+            };
+        }
+
+
+
 
         private void CalculateNodePositions(Dictionary<string, List<string>> dependencies, Dictionary<string, (float X, float Y)> nodePositions)
         {
-            int columnWidth = 200;  // 列宽，增加间距以减少拥挤
-            int rowHeight = 100;   // 行高
-            int x = 10, y = 10;    // 初始坐标
+            int maxPerRow = 5;  // 每行最大节点数
+            int columnWidth = 200;
+            int rowHeight = 100;
+            int x = 10, y = 10;
+            int count = 0;
 
             foreach (var dep in dependencies.Keys)
             {
                 if (!nodePositions.ContainsKey(dep))
                 {
                     nodePositions[dep] = (x, y);
-                    x += columnWidth;  // 移动到下一列
+                    count++;
+                    if (count >= maxPerRow)
+                    {
+                        x = 10;
+                        y += rowHeight;
+                        count = 0;
+                    }
+                    else
+                    {
+                        x += columnWidth;
+                    }
                 }
 
-                int childY = y + rowHeight; // 子节点开始的y坐标
+                int childY = y + rowHeight;
                 foreach (var child in dependencies[dep])
                 {
                     if (!nodePositions.ContainsKey(child))
                     {
                         nodePositions[child] = (x, childY);
-                        childY += rowHeight; // 每个子节点向下移动
+                        childY += rowHeight;
                     }
                 }
-                y = childY + rowHeight;  // 更新y坐标到下一个主节点
-                x = 10; // 重置x坐标回到第一列
             }
         }
 
 
-        private DiagramShape GetOrCreateDiagramNode(string key, (float X, float Y) position, List<DiagramItem> itemsToAdd)
-        {
-            var existingNode = itemsToAdd.OfType<DiagramShape>().FirstOrDefault(s => s.Content.ToString() == key);
-            if (existingNode != null)
-                return existingNode;
 
-            var newNode = new DiagramShape
-            {
-                Content = key,
-                Position = new PointFloat(position.X, position.Y)
-            };
-            itemsToAdd.Add(newNode);
-            return newNode;
-        }
+        //private DiagramShape GetOrCreateDiagramNode(string key, (float X, float Y) position, DiagramControl diagram)
+        //{
+        //    var existingNode = diagram.Items.OfType<DiagramShape>().FirstOrDefault(s => s.Content.ToString() == key);
+        //    if (existingNode != null)
+        //        return existingNode;
+
+        //    var newNode = new DiagramShape
+        //    {
+        //        Content = key,
+        //        Position = new PointFloat(position.X, position.Y)
+        //    };
+        //    diagram.Items.Add(newNode);
+        //    return newNode;
+        //}
+
         #endregion
 
 
