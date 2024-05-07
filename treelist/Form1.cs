@@ -8,6 +8,7 @@ using DevExpress.XtraPrinting.Native.WebClientUIControl;
 using DevExpress.XtraTreeList;
 using DevExpress.XtraTreeList.Columns;
 using DevExpress.XtraTreeList.Nodes;
+using log4net;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Core.DAG;
 using Newtonsoft.Json;
 using System;
@@ -37,10 +38,14 @@ namespace treelist
         // 在Form1类中定义一个列表作为数据源
         BindingList<TreeListNodeModel> nodeList = new BindingList<TreeListNodeModel>();
         Dictionary<string, List<string>> fileDependencies = new Dictionary<string, List<string>>();//存储关联信息
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(Form1));
         public Form1()
         {
             InitializeComponent();
             InitializeTreeList();
+            // Configure log4net using the config file
+            log4net.Config.XmlConfigurator.Configure(new FileInfo("log4net.config"));
+            _logger.Info("程序开始运行.");
         }
 
 
@@ -63,15 +68,12 @@ namespace treelist
                     // 绘制前半部分（黑色）
                     string mainText = fullText.Substring(0, startIndex);
                     e.Cache.DrawString(mainText, e.Appearance.Font, Brushes.Black, e.Bounds.Location);
-
                     // 计算前半部分的宽度，以便确定灰色文本的开始位置
                     SizeF mainTextSize = e.Cache.CalcTextSize(mainText, e.Appearance.Font).ToSize();
                     PointF revisionTextLocation = new PointF(e.Bounds.X + mainTextSize.Width, e.Bounds.Y);
-
                     // 绘制后半部分（灰色）
                     string revisionText = fullText.Substring(startIndex);
                     e.Cache.DrawString(revisionText, e.Appearance.Font, Brushes.Gray, revisionTextLocation);
-
                     // 设置Handled为true，避免默认绘制行为
                     e.Handled = true;
                 }
@@ -103,16 +105,24 @@ namespace treelist
         /// <param name="e"></param>
         private void LoadXmlButton_Click(object sender, EventArgs e)
         {
-            FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
-            if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
+            try
             {
-                string selectedFolder = folderBrowserDialog.SelectedPath;
-
-                // 异步执行加载和解析操作Task.Run(() =>
-                LoadFiles(selectedFolder); 
+                _logger.Info("脚本导入正常.");
+                FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
+                if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string selectedFolder = folderBrowserDialog.SelectedPath;
+                    // 异步执行加载和解析操作Task.Run(() =>
+                    LoadFiles(selectedFolder);
                     // 异步执行加载和解析操作
-                ProcessXmlDirectory(selectedFolder);
-                Task.Run(() => DisplayDependenciesAsync(diagramControl1, fileDependencies));
+                    ProcessXmlDirectory(selectedFolder);
+                    Task.Run(() => DisplayDependenciesAsync(diagramControl1, fileDependencies));
+                }
+            }
+            catch (Exception ex)
+            {
+
+                _logger.Error("脚本导入失败.", ex);
             }
         }
         int nodeIdCounter = 1;
@@ -122,147 +132,159 @@ namespace treelist
         /// <param name="folderPath">json文件地址</param>
         private void LoadFiles(string folderPath)
         {
-            // 步骤1: 解析 JSON 文件，创建节点到 TreeListNode 的映射
-            var jsonFilePath = Path.Combine(folderPath, "C:\\work\\ScriptList.json");
-            var jsonEcuMapping = LoadJsonData(jsonFilePath);
-            // 创建节点数据
-            foreach (var script in jsonEcuMapping)
+            try
             {
-                int scriptTypeId = nodeIdCounter++;
-                switch (script.scriptType)
+                // 步骤1: 解析 JSON 文件，创建节点到 TreeListNode 的映射
+                var jsonFilePath = Path.Combine(folderPath, "C:\\work\\ScriptList.json");
+                var jsonEcuMapping = LoadJsonData(jsonFilePath);
+                // 创建节点数据
+                foreach (var script in jsonEcuMapping)
                 {
-                    case "B":
-                        script.scriptType = "SystemBaseScript";
-                        break;
-                    case "F":
-                        script.scriptType = "GeneralFunctionScript";
-                        break;
-                    case "S":
-                        script.scriptType = "SoftwareDownloadScript";
-                        break;
-                    case "D":
-                        script.scriptType = "DiagnosticScript";
-                        break;
-                    case "C":
-                        script.scriptType = "ConfigScript";
-                        break;
-                    default:
-                        script.scriptType = "SystemBaseScript";
-                        break;
-                }
-                if (!nodeList.Any(n => n.Name == script.scriptType))
-                {
-                    nodeList.Add(new TreeListNodeModel
+                    int scriptTypeId = nodeIdCounter++;
+                    switch (script.scriptType)
                     {
-                        ID = scriptTypeId,
-                        ParentID = null, // 顶级节点
-                        Name = script.scriptType
-                    });
-                }
-                foreach (var scriptDto in script.scriptDTOS)
-                {
-                    if (scriptDto.scGenericComponentDTOS != null)
+                        case "B":
+                            script.scriptType = "SystemBaseScript";
+                            break;
+                        case "F":
+                            script.scriptType = "GeneralFunctionScript";
+                            break;
+                        case "S":
+                            script.scriptType = "SoftwareDownloadScript";
+                            break;
+                        case "D":
+                            script.scriptType = "DiagnosticScript";
+                            break;
+                        case "C":
+                            script.scriptType = "ConfigScript";
+                            break;
+                        default:
+                            script.scriptType = "SystemBaseScript";
+                            break;
+                    }
+                    if (!nodeList.Any(n => n.Name == script.scriptType))
                     {
-                        foreach (var component in scriptDto.scGenericComponentDTOS)
+                        nodeList.Add(new TreeListNodeModel
                         {
-                            int componentId = nodeIdCounter++;
-                            if (!nodeList.Any(n => n.Name == component.ecu))
+                            ID = scriptTypeId,
+                            ParentID = null, // 顶级节点
+                            Name = script.scriptType
+                        });
+                    }
+                    foreach (var scriptDto in script.scriptDTOS)
+                    {
+                        if (scriptDto.scGenericComponentDTOS != null)
+                        {
+                            foreach (var component in scriptDto.scGenericComponentDTOS)
                             {
-                                nodeList.Add(new TreeListNodeModel
+                                int componentId = nodeIdCounter++;
+                                if (!nodeList.Any(n => n.Name == component.ecu))
                                 {
-                                    ID = componentId,
-                                    ParentID = nodeList.Where(n => n.Name == script.scriptType).Select(n => n.ID).FirstOrDefault(),
-                                    Name = component.ecu
-                                });
+                                    nodeList.Add(new TreeListNodeModel
+                                    {
+                                        ID = componentId,
+                                        ParentID = nodeList.Where(n => n.Name == script.scriptType).Select(n => n.ID).FirstOrDefault(),
+                                        Name = component.ecu
+                                    });
+                                }
                             }
                         }
                     }
                 }
-            }
-            // 加载 XML 文件并添加到节点数据中
-            var xmlFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories)
-                .Where(file => file.EndsWith(".otx", StringComparison.OrdinalIgnoreCase) || file.EndsWith(".zotx", StringComparison.OrdinalIgnoreCase));
-            foreach (var xmlFile in xmlFiles)
-            {
-                var xmlFileName = Path.GetFileName(xmlFile);
-                var scriptDto = jsonEcuMapping.SelectMany(s => s.scriptDTOS)
-                    .FirstOrDefault(dto => dto.fileTitle.Equals(xmlFileName, StringComparison.OrdinalIgnoreCase));
+                // 加载 XML 文件并添加到节点数据中
+                var xmlFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories)
+                    .Where(file => file.EndsWith(".otx", StringComparison.OrdinalIgnoreCase) || file.EndsWith(".zotx", StringComparison.OrdinalIgnoreCase));
+                foreach (var xmlFile in xmlFiles)
+                {
+                    var xmlFileName = Path.GetFileName(xmlFile);
+                    var scriptDto = jsonEcuMapping.SelectMany(s => s.scriptDTOS)
+                        .FirstOrDefault(dto => dto.fileTitle.Equals(xmlFileName, StringComparison.OrdinalIgnoreCase));
 
-                var result = jsonEcuMapping
-                    .SelectMany(s => s.scriptDTOS.Select(dto => new { ScriptType = s.scriptType, Dto = dto }))
-                    .FirstOrDefault(x => x.Dto.fileTitle.Equals(xmlFileName, StringComparison.OrdinalIgnoreCase));
-                var scriptType = "";
-                ScriptDTO scriptDtoEntry = null;
-                if (result != null)
-                {
-                    scriptType = result.ScriptType;
-                    scriptDtoEntry = result.Dto;
-                }
-                if (result == null)
-                {
-                    if (!nodeList.Any(n => n.Name == "Local"))
+                    var result = jsonEcuMapping
+                        .SelectMany(s => s.scriptDTOS.Select(dto => new { ScriptType = s.scriptType, Dto = dto }))
+                        .FirstOrDefault(x => x.Dto.fileTitle.Equals(xmlFileName, StringComparison.OrdinalIgnoreCase));
+                    var scriptType = "";
+                    ScriptDTO scriptDtoEntry = null;
+                    if (result != null)
                     {
-                        nodeList.Add(new TreeListNodeModel
-                        {
-                            ID = nodeIdCounter++,
-                            ParentID = null, // 顶级节点
-                            Name = "Local"
-                        });
+                        scriptType = result.ScriptType;
+                        scriptDtoEntry = result.Dto;
                     }
-                    else
+                    if (result == null)
                     {
-                        TreeListNodeModel aaa = new TreeListNodeModel
+                        _logger.Warn("当前脚本不在json文件中.");
+                        if (!nodeList.Any(n => n.Name == "Local"))
                         {
-                            ID = nodeIdCounter++,
-                            ParentID = nodeList.Where(n => n.Name == "Local").Select(n => n.ID).FirstOrDefault(), // 顶级节点
-                            Name = xmlFileName
-                        };
-                        nodeList.Add(aaa);
-                        LoadXmlAndPopulateTree1(xmlFile, aaa, nodeList);
-                    }
-                }
-                if (scriptDto != null)
-                {
-                    if (scriptDto.scGenericComponentDTOS != null)
-                    {
-                        if (!nodeList.Any(n => n.Name == xmlFileName))
+                            nodeList.Add(new TreeListNodeModel
+                            {
+                                ID = nodeIdCounter++,
+                                ParentID = null, // 顶级节点
+                                Name = "Local"
+                            });
+                        }
+                        else
                         {
                             TreeListNodeModel aaa = new TreeListNodeModel
                             {
-                                ID = nodeIdCounter++,//xmlFileName + "["+scriptDto.gitRevision+"]"+ "["+scriptDto.gitDate+"]"
-                                ParentID = nodeList.Where(n => n.Name == scriptDto.scGenericComponentDTOS.FirstOrDefault().ecu).Select(n => n.ID).FirstOrDefault(),//scriptDto.scGenericComponentDTOS?.FirstOrDefault()?.ecu
-                                Name = xmlFileName + " [" + scriptDto.gitRevision + "] " + "[" + scriptDto.gitDate + "]",
-                                FileTitle = scriptDto.fileTitle,
-                                GitRevision = scriptDto.gitRevision,
-                                GitDate = scriptDto.gitDate,
-                                FileId = scriptDto.id,
-                                Title = scriptDto.title
+                                ID = nodeIdCounter++,
+                                ParentID = nodeList.Where(n => n.Name == "Local").Select(n => n.ID).FirstOrDefault(), // 顶级节点
+                                Name = xmlFileName
                             };
                             nodeList.Add(aaa);
                             LoadXmlAndPopulateTree1(xmlFile, aaa, nodeList);
                         }
                     }
-                    else
+                    if (scriptDto != null)
                     {
-                        if (!nodeList.Any(n => n.Name == xmlFileName))
+                        if (scriptDto.scGenericComponentDTOS != null)
                         {
-                            TreeListNodeModel aaa = new TreeListNodeModel
+                            _logger.Info("当前脚本ecu型号为：" + scriptDto.scGenericComponentDTOS.FirstOrDefault().ecu +"脚本名称："+ xmlFileName);
+                            if (!nodeList.Any(n => n.Name == xmlFileName))
                             {
-                                ID = nodeIdCounter++,//xmlFileName + "["+scriptDto.gitRevision+"]"+ "["+scriptDto.gitDate+"]"
-                                ParentID = nodeList.Where(n => n.Name == scriptType).Select(n => n.ID).FirstOrDefault(),//scriptDto.scGenericComponentDTOS?.FirstOrDefault()?.ecu
-                                Name = xmlFileName + "[" + scriptDto.gitRevision + "] " + "[" + scriptDto.gitDate + "]",
-                                FileTitle = scriptDto.fileTitle,
-                                GitRevision = scriptDto.gitRevision,
-                                GitDate = scriptDto.gitDate,
-                                FileId = scriptDto.id,
-                                Title = scriptDto.title
-                            };
-                            nodeList.Add(aaa);
-                            LoadXmlAndPopulateTree1(xmlFile, aaa, nodeList);
+                                TreeListNodeModel aaa = new TreeListNodeModel
+                                {
+                                    ID = nodeIdCounter++,//xmlFileName + "["+scriptDto.gitRevision+"]"+ "["+scriptDto.gitDate+"]"
+                                    ParentID = nodeList.Where(n => n.Name == scriptDto.scGenericComponentDTOS.FirstOrDefault().ecu).Select(n => n.ID).FirstOrDefault(),//scriptDto.scGenericComponentDTOS?.FirstOrDefault()?.ecu
+                                    Name = xmlFileName + " [" + scriptDto.gitRevision + "] " + "[" + scriptDto.gitDate + "]",
+                                    FileTitle = scriptDto.fileTitle,
+                                    GitRevision = scriptDto.gitRevision,
+                                    GitDate = scriptDto.gitDate,
+                                    FileId = scriptDto.id,
+                                    Title = scriptDto.title
+                                };
+                                nodeList.Add(aaa);
+                                LoadXmlAndPopulateTree1(xmlFile, aaa, nodeList);
+                            }
+                        }
+                        else
+                        {
+                            _logger.Warn("当前脚本无ecu型号.");
+                            if (!nodeList.Any(n => n.Name == xmlFileName))
+                            {
+                                TreeListNodeModel aaa = new TreeListNodeModel
+                                {
+                                    ID = nodeIdCounter++,//xmlFileName + "["+scriptDto.gitRevision+"]"+ "["+scriptDto.gitDate+"]"
+                                    ParentID = nodeList.Where(n => n.Name == scriptType).Select(n => n.ID).FirstOrDefault(),//scriptDto.scGenericComponentDTOS?.FirstOrDefault()?.ecu
+                                    Name = xmlFileName + "[" + scriptDto.gitRevision + "] " + "[" + scriptDto.gitDate + "]",
+                                    FileTitle = scriptDto.fileTitle,
+                                    GitRevision = scriptDto.gitRevision,
+                                    GitDate = scriptDto.gitDate,
+                                    FileId = scriptDto.id,
+                                    Title = scriptDto.title
+                                };
+                                nodeList.Add(aaa);
+                                LoadXmlAndPopulateTree1(xmlFile, aaa, nodeList);
+                            }
                         }
                     }
                 }
+                _logger.Info("文件导入正常.");
             }
+            catch (Exception ex)
+            {
+                _logger.Error("Error.", ex); 
+            }
+            
             // 使用 nodeList 作为数据源
             this.Invoke(new Action(() =>
             {
@@ -279,8 +301,17 @@ namespace treelist
         /// <param name="jsonFilePath">json文件地址</param>
         private List<ScriptList> LoadJsonData(string jsonFilePath)
         {
-            string json = File.ReadAllText(jsonFilePath);
-            return JsonConvert.DeserializeObject<List<ScriptList>>(json);
+            try
+            {
+                _logger.Info("json文件解析成功.");
+                string json = File.ReadAllText(jsonFilePath);
+                return JsonConvert.DeserializeObject<List<ScriptList>>(json);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("json文件解析失败：", ex); 
+                return null;
+            }
         }
         #region 使用XmlDocument
         /// <summary>
@@ -386,6 +417,7 @@ namespace treelist
             var localNodeId = nodeList.FirstOrDefault(n => n.Name == "Local")?.ID;
             if (localNodeId != null)
             {
+                _logger.Warn("测试修改数据，treelist实时更新.");
                 // 使用找到的ID来更新对应的节点
                 var nodeToUpdate = nodeList.FirstOrDefault(n => n.ID == localNodeId);
                 if (nodeToUpdate != null)
@@ -397,6 +429,7 @@ namespace treelist
             }
             else
             {
+                _logger.Warn("测试修改数据，treelist实时更新.");
                 localNodeId = nodeList.FirstOrDefault(n => n.Name == "测试能否实时修改数据")?.ID;
                 // 使用找到的ID来更新对应的节点
                 var nodeToUpdate = nodeList.FirstOrDefault(n => n.ID == localNodeId);
@@ -407,7 +440,6 @@ namespace treelist
                     // 使用INotifyPropertyChanged接口，UI会自动响应这个变化
                 }
             }
-
         }
 
         #region 使用XmlReader
@@ -523,7 +555,6 @@ namespace treelist
         {
             XDocument doc = XDocument.Load(xmlFilePath);
             RecursiveXmlParse(doc.Root, currentParentNode, nodeList); // 从根元素开始解析
-            
         }
 
         private void RecursiveXmlParse(XElement element, TreeListNodeModel parentNode, BindingList<TreeListNodeModel> nodeList)
@@ -531,7 +562,6 @@ namespace treelist
             foreach (XElement childElement in element.Elements())
             {
                 string nodeName = childElement.Name.LocalName;
-
                 // 只处理我们关心的节点类型
                 if (nodeName.Equals("procedure", StringComparison.OrdinalIgnoreCase) ||
                     nodeName.Equals("inParam", StringComparison.OrdinalIgnoreCase) ||
@@ -550,7 +580,6 @@ namespace treelist
                         ImageIndex = iconIndex
                     };
                     nodeList.Add(newNode);
-
                     // 递归处理所有子元素
                     RecursiveXmlParse(childElement, parentNode, nodeList);
                 }
