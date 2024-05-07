@@ -775,55 +775,52 @@ namespace treelist
             int batchSize = 100; // 减小批处理大小以减轻UI线程负担
             List<Task> tasks = new List<Task>();
 
-            await Task.Run(() =>
+            List<DiagramItem> tempItems = new List<DiagramItem>();
+
+            foreach (var dep in dependencies)
             {
-                List<DiagramItem> tempItems = new List<DiagramItem>();
+                var sourceNode = GetOrCreateDiagramNode(dep.Key, nodePositions[dep.Key], diagram);
+                var childNodes = new List<DiagramShape>();
 
-                foreach (var dep in dependencies)
+                foreach (var child in dep.Value)
                 {
-                    var sourceNode = GetOrCreateDiagramNode(dep.Key, nodePositions[dep.Key], diagram);
-                    var childNodes = new List<DiagramShape>();
-
-                    foreach (var child in dep.Value)
-                    {
-                        var childNode = GetOrCreateDiagramNode(child, nodePositions[child], diagram);
-                        childNodes.Add(childNode);
-                        var connector = new DiagramConnector { BeginItem = sourceNode, EndItem = childNode };
-                        tempItems.Add(connector);
-                    }
-
-                    // 仅在UI线程添加节点
-                    diagram.Invoke((MethodInvoker)delegate
-                    {
-                        diagram.BeginUpdate();
-                        try
-                        {
-                            if (!diagram.Items.Contains(sourceNode))
-                                diagram.Items.Add(sourceNode);
-                            childNodes.ForEach(n => {
-                                if (!diagram.Items.Contains(n))
-                                    diagram.Items.Add(n);
-                            });
-                        }
-                        finally
-                        {
-                            diagram.EndUpdate();
-                        }
-                    });
-
-                    if (tempItems.Count >= batchSize)
-                    {
-                        var currentBatch = tempItems.ToList(); // 复制当前批次
-                        tempItems.Clear(); // 清空列表以开始新的批次
-                        tasks.Add(UpdateDiagramAsync(diagram, currentBatch));
-                    }
+                    var childNode = GetOrCreateDiagramNode(child, nodePositions[child], diagram);
+                    childNodes.Add(childNode);
+                    var connector = new DiagramConnector { BeginItem = sourceNode, EndItem = childNode };
+                    tempItems.Add(connector);
                 }
 
-                if (tempItems.Count > 0)
+                // 仅在UI线程添加节点
+                diagram.Invoke((MethodInvoker)delegate
                 {
-                    tasks.Add(UpdateDiagramAsync(diagram, tempItems)); // 添加剩余的项
+                    diagram.BeginUpdate();
+                    try
+                    {
+                        if (!diagram.Items.Contains(sourceNode))
+                            diagram.Items.Add(sourceNode);
+                        childNodes.ForEach(n => {
+                            if (!diagram.Items.Contains(n))
+                                diagram.Items.Add(n);
+                        });
+                    }
+                    finally
+                    {
+                        diagram.EndUpdate();
+                    }
+                });
+
+                if (tempItems.Count >= batchSize)
+                {
+                    var currentBatch = tempItems.ToList(); // 复制当前批次
+                    tempItems.Clear(); // 清空列表以开始新的批次
+                    tasks.Add(UpdateDiagramAsync(diagram, currentBatch));
                 }
-            });
+            }
+
+            if (tempItems.Count > 0)
+            {
+                tasks.Add(UpdateDiagramAsync(diagram, tempItems)); // 添加剩余的项
+            }
 
             await Task.WhenAll(tasks); // 等待所有批次完成
         }
