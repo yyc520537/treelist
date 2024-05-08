@@ -46,7 +46,6 @@ namespace treelist
 
             var appender = (log4net.Appender.RollingFileAppender)log4net.LogManager.GetRepository()
                 .GetAppenders().FirstOrDefault(a => a.Name == "FileAppender");
-
             if (appender != null)
             {
                 appender.File = $"C:/Logs/{customFieldName}";
@@ -85,12 +84,13 @@ namespace treelist
         }
         private void treeList1_FocusedNodeChanged(object sender, DevExpress.XtraTreeList.FocusedNodeChangedEventArgs e)
         {
-            // 可以在这里添加逻辑来处理节点焦点改变事件
             if (e.Node != null)
             {
-                Console.WriteLine("Selected Node: " + e.Node.GetValue("Name"));
+                var fileName = ExtractFileName(e.Node.GetValue("Name").ToString());
+                DisplayDependenciesForSelectedFile(fileName);
             }
         }
+
         /// <summary>
         /// TreeList属性设置
         /// </summary>
@@ -120,7 +120,7 @@ namespace treelist
                     LoadFiles(selectedFolder);
                     // 异步执行加载和解析操作
                     ProcessXmlDirectory(selectedFolder);
-                    Task.Run(() => DisplayDependenciesAsync(diagramControl1, fileDependencies));
+                    //Task.Run(() => DisplayDependenciesAsync(diagramControl1, fileDependencies));
                 }
             }
             catch (Exception ex)
@@ -269,7 +269,7 @@ namespace treelist
                                 {
                                     ID = nodeIdCounter++,//xmlFileName + "["+scriptDto.gitRevision+"]"+ "["+scriptDto.gitDate+"]"
                                     ParentID = nodeList.Where(n => n.Name == scriptType).Select(n => n.ID).FirstOrDefault(),//scriptDto.scGenericComponentDTOS?.FirstOrDefault()?.ecu
-                                    Name = xmlFileName + "[" + scriptDto.gitRevision + "] " + "[" + scriptDto.gitDate + "]",
+                                    Name = xmlFileName + " [" + scriptDto.gitRevision + "] " + "[" + scriptDto.gitDate + "]",
                                     FileTitle = scriptDto.fileTitle,
                                     GitRevision = scriptDto.gitRevision,
                                     GitDate = scriptDto.gitDate,
@@ -645,7 +645,6 @@ namespace treelist
             XDocument doc = XDocument.Load(filePath);
             List<string> prefixes = new List<string>();
             string trimmedPrefix = null;
-            List<TreeListNodeModel> nodeList1 = nodeList.ToList();
             // 遍历所有元素，只处理 <import> 标签
             foreach (XElement element in doc.Descendants())
             {
@@ -661,11 +660,9 @@ namespace treelist
                         {
                             prefixes.Add(aaa);
                         }
-
                     }
                 }
             }
-
             return prefixes;
         }
 
@@ -775,17 +772,13 @@ namespace treelist
         {
             var nodePositions = new Dictionary<string, (float X, float Y)>();
             CalculateNodePositions(dependencies, nodePositions);
-
             int batchSize = 100; // 减小批处理大小以减轻UI线程负担
             List<Task> tasks = new List<Task>();
-
             List<DiagramItem> tempItems = new List<DiagramItem>();
-
             foreach (var dep in dependencies)
             {
                 var sourceNode = GetOrCreateDiagramNode(dep.Key, nodePositions[dep.Key], diagram);
                 var childNodes = new List<DiagramShape>();
-
                 foreach (var child in dep.Value)
                 {
                     var childNode = GetOrCreateDiagramNode(child, nodePositions[child], diagram);
@@ -793,7 +786,6 @@ namespace treelist
                     var connector = new DiagramConnector { BeginItem = sourceNode, EndItem = childNode };
                     tempItems.Add(connector);
                 }
-
                 // 仅在UI线程添加节点
                 diagram.Invoke((MethodInvoker)delegate
                 {
@@ -812,7 +804,6 @@ namespace treelist
                         diagram.EndUpdate();
                     }
                 });
-
                 if (tempItems.Count >= batchSize)
                 {
                     var currentBatch = tempItems.ToList(); // 复制当前批次
@@ -820,12 +811,10 @@ namespace treelist
                     tasks.Add(UpdateDiagramAsync(diagram, currentBatch));
                 }
             }
-
             if (tempItems.Count > 0)
             {
                 tasks.Add(UpdateDiagramAsync(diagram, tempItems)); // 添加剩余的项
             }
-
             await Task.WhenAll(tasks); // 等待所有批次完成
         }
 
@@ -845,24 +834,29 @@ namespace treelist
             }));
         }
 
-
-
+        /// <summary>
+        /// 生成关联图节点
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="position"></param>
+        /// <param name="diagram"></param>
+        /// <returns></returns>
         private DiagramShape GetOrCreateDiagramNode(string key, (float X, float Y) position, DiagramControl diagram)
         {
             var existingNode = diagram.Items.OfType<DiagramShape>().FirstOrDefault(s => s.Content.ToString() == key);
             if (existingNode != null)
                 return existingNode;
-
+            // 设置字体大小
+            Font font = new Font("Arial", 10);
+            // 计算文本长度
+            SizeF textSize = MeasureString(key, font);
             return new DiagramShape
             {
                 Content = key,
                 Position = new PointFloat(position.X, position.Y),
-                Size = new SizeF(100, 25) // 确保尺寸足够可见
-            };
+                Size = new SizeF(textSize.Width , textSize.Height + 10)// 确保尺寸足够可见
+            }; 
         }
-
-
-
 
         private void CalculateNodePositions(Dictionary<string, List<string>> dependencies, Dictionary<string, (float X, float Y)> nodePositions)
         {
@@ -871,7 +865,6 @@ namespace treelist
             int rowHeight = 100;
             int x = 10, y = 10;
             int count = 0;
-
             foreach (var dep in dependencies.Keys)
             {
                 if (!nodePositions.ContainsKey(dep))
@@ -889,7 +882,6 @@ namespace treelist
                         x += columnWidth;
                     }
                 }
-
                 int childY = y + rowHeight;
                 foreach (var child in dependencies[dep])
                 {
@@ -901,26 +893,123 @@ namespace treelist
                 }
             }
         }
-
-
-
-        //private DiagramShape GetOrCreateDiagramNode(string key, (float X, float Y) position, DiagramControl diagram)
-        //{
-        //    var existingNode = diagram.Items.OfType<DiagramShape>().FirstOrDefault(s => s.Content.ToString() == key);
-        //    if (existingNode != null)
-        //        return existingNode;
-
-        //    var newNode = new DiagramShape
-        //    {
-        //        Content = key,
-        //        Position = new PointFloat(position.X, position.Y)
-        //    };
-        //    diagram.Items.Add(newNode);
-        //    return newNode;
-        //}
-
         #endregion
 
+        //private HashSet<string> visitedNodes = new HashSet<string>();  // 避免无限递归
 
+        //private void DisplayDependenciesForSelectedFile(string selectedFileName)
+        //{
+        //    if (visitedNodes.Contains(selectedFileName))
+        //        return;
+
+        //    visitedNodes.Add(selectedFileName);
+
+        //    if (fileDependencies.TryGetValue(selectedFileName, out var dependencies))
+        //    {
+        //        var nodePositions = new Dictionary<string, (float X, float Y)>();
+        //        // 首先加入选中的节点，确保它在依赖项中
+        //        CalculateNodePositions(new Dictionary<string, List<string>> { { selectedFileName, dependencies } }, nodePositions);
+
+        //        var parentNode = GetOrCreateDiagramNode(selectedFileName, nodePositions[selectedFileName], diagramControl1);
+        //        diagramControl1.Items.Add(parentNode);  // 确保父节点被添加
+
+        //        foreach (var dep in dependencies)
+        //        {
+        //            var childNode = GetOrCreateDiagramNode(dep, nodePositions[dep], diagramControl1);
+        //            diagramControl1.Items.Add(childNode);  // 确保子节点被添加
+        //            var connector = new DiagramConnector { BeginItem = parentNode, EndItem = childNode };
+        //            diagramControl1.Items.Add(connector);
+
+        //            // 递归绘制子节点的依赖
+        //            DisplayDependenciesForSelectedFile(dep);
+        //        }
+        //    }
+
+        //    diagramControl1.Refresh();  // 只在最外层调用刷新
+        //}
+
+        //private void ResetVisitedNodes()
+        //{
+        //    visitedNodes.Clear();
+        //}
+
+
+
+        /// <summary>
+        /// 将鼠标点击脚本的关联脚本绘制出来
+        /// </summary>
+        /// <param name="selectedFileName"></param>
+        private void DisplayDependenciesForSelectedFile(string selectedFileName)
+        {
+            try
+            {
+                // 清除旧的图形元素
+                diagramControl1.Items.Clear();
+                // 获取选中文件的依赖
+                if (fileDependencies.TryGetValue(selectedFileName, out var dependencies))
+                {
+                    _logger.Info("已生成"+ selectedFileName+"脚本关联图！");
+                    var nodePositions = new Dictionary<string, (float X, float Y)>();
+                    // 首先加入选中的节点，确保它在依赖项中
+                    nodePositions[selectedFileName] = (10, 30); // 这里设置初始位置，可以根据需要调整
+                                                                // 计算节点位置
+                    CalculateNodePositions(new Dictionary<string, List<string>> { { selectedFileName, dependencies } }, nodePositions);
+                    // 添加父节点
+                    var parentNode = GetOrCreateDiagramNode(selectedFileName, nodePositions[selectedFileName], diagramControl1);
+                    diagramControl1.Items.Add(parentNode);  // 确保父节点被添加
+                                                            // 添加子节点和连接线
+                    foreach (var dep in dependencies)
+                    {
+                        var childNode = GetOrCreateDiagramNode(dep, nodePositions[dep], diagramControl1);
+                        diagramControl1.Items.Add(childNode);  // 确保子节点被添加
+                        var connector = new DiagramConnector { BeginItem = parentNode, EndItem = childNode };
+                        diagramControl1.Items.Add(connector);
+                    }
+                }
+                else
+                {
+                    _logger.Info(selectedFileName + "无关联脚本");
+                }
+                // 刷新控件以显示更新
+                diagramControl1.Refresh();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(selectedFileName + "脚本关联图生成失败！" + ex.ToString());
+            }
+        }
+
+
+
+        /// <summary>
+        /// 截取文件名字符串
+        /// </summary>
+        /// <param name="fullText"></param>
+        /// <returns></returns>
+        private string ExtractFileName(string fullText)
+        {
+            // 使用空格作为分隔符，分割字符串
+            string[] parts = fullText.Split(new char[] { ' ' }, 2);
+            // 第一部分将是文件名
+            if (parts.Length > 0)
+            {
+                return parts[0];
+            }
+            return fullText; // 如果没有空格，返回原始字符串
+        }
+
+        /// <summary>
+        /// 计算文件名长度，设置合适的节点大小
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="font"></param>
+        /// <returns></returns>
+        private SizeF MeasureString(string text, Font font)
+        {
+            using (var g = Graphics.FromImage(new Bitmap(1, 1)))
+            {
+                return g.MeasureString(text, font);
+            }
+        }
     }
 }

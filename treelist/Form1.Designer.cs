@@ -1,4 +1,5 @@
-﻿using DevExpress.XtraTreeList;
+﻿using DevExpress.XtraDiagram;
+using DevExpress.XtraTreeList;
 using System.ComponentModel;
 using System.Data;
 using System.Linq;
@@ -122,6 +123,8 @@ namespace treelist
             this.diagramControl1.Size = new System.Drawing.Size(325, 478);
             this.diagramControl1.TabIndex = 0;
             this.diagramControl1.Text = "diagramControl1";
+            this.diagramControl1.FitToDrawing();  // 调整视图以适应绘图内容
+
             // 
             // panelControl2
             // 
