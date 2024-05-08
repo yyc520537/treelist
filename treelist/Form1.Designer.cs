@@ -62,19 +62,19 @@ namespace treelist
             this.panelControl1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panelControl1.Location = new System.Drawing.Point(3, 3);
             this.panelControl1.Name = "panelControl1";
-            this.panelControl1.Size = new System.Drawing.Size(334, 474);
+            this.panelControl1.Size = new System.Drawing.Size(344, 478);
             this.panelControl1.TabIndex = 0;
             // 
             // treeList1
             // 
-            this.treeList1.Location = new System.Drawing.Point(0, 0);
-            this.treeList1.Name = "treeList1";
             this.treeList1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.treeList1.Location = new System.Drawing.Point(2, 2);
+            this.treeList1.Name = "treeList1";
             this.treeList1.OptionsBehavior.Editable = false;
             this.treeList1.OptionsFind.AlwaysVisible = true;
             this.treeList1.OptionsView.CheckBoxStyle = DevExpress.XtraTreeList.DefaultNodeCheckBoxStyle.Check;
             this.treeList1.SelectImageList = this.imageCollection1;
-            this.treeList1.Size = new System.Drawing.Size(331, 474);
+            this.treeList1.Size = new System.Drawing.Size(340, 474);
             this.treeList1.TabIndex = 0;
             this.treeList1.FocusedNodeChanged += new DevExpress.XtraTreeList.FocusedNodeChangedEventHandler(this.treeList1_FocusedNodeChanged);
             this.treeList1.CustomDrawNodeCell += new DevExpress.XtraTreeList.CustomDrawNodeCellEventHandler(this.treeList1_CustomDrawNodeCell);
@@ -89,38 +89,37 @@ namespace treelist
             // tableLayoutPanel1
             // 
             this.tableLayoutPanel1.ColumnCount = 2;
-            this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 350F));
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tableLayoutPanel1.Controls.Add(this.panelControl1, 0, 0);
             this.tableLayoutPanel1.Controls.Add(this.panel3, 1, 0);
-            this.tableLayoutPanel1.Location = new System.Drawing.Point(2, 0);
+            this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
             this.tableLayoutPanel1.Name = "tableLayoutPanel1";
             this.tableLayoutPanel1.RowCount = 1;
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(680, 480);
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(681, 484);
             this.tableLayoutPanel1.TabIndex = 1;
             // 
             // panel3
             // 
             this.panel3.Controls.Add(this.diagramControl1);
             this.panel3.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel3.Location = new System.Drawing.Point(343, 3);
+            this.panel3.Location = new System.Drawing.Point(353, 3);
             this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(334, 474);
+            this.panel3.Size = new System.Drawing.Size(325, 478);
             this.panel3.TabIndex = 2;
             // 
             // diagramControl1
             // 
-            this.diagramControl1.Location = new System.Drawing.Point(3, 3);
             this.diagramControl1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.diagramControl1.Location = new System.Drawing.Point(0, 0);
             this.diagramControl1.Name = "diagramControl1";
             this.diagramControl1.OptionsBehavior.SelectedStencils = new DevExpress.Diagram.Core.StencilCollection(new string[] {
             "BasicShapes",
             "BasicFlowchartShapes"});
             this.diagramControl1.OptionsView.PaperKind = System.Drawing.Printing.PaperKind.Letter;
-            this.diagramControl1.Size = new System.Drawing.Size(328, 468);
+            this.diagramControl1.Size = new System.Drawing.Size(325, 478);
             this.diagramControl1.TabIndex = 0;
             this.diagramControl1.Text = "diagramControl1";
             // 

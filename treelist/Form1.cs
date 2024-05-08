@@ -1,28 +1,16 @@
-﻿using DevExpress.Diagram.Core;
-using DevExpress.Diagram.Core.Layout;
-using DevExpress.Export.Xl;
-using DevExpress.Utils;
+﻿using DevExpress.Utils;
 using DevExpress.XtraDiagram;
-using DevExpress.XtraEditors.Filtering;
-using DevExpress.XtraPrinting.Native.WebClientUIControl;
 using DevExpress.XtraTreeList;
 using DevExpress.XtraTreeList.Columns;
-using DevExpress.XtraTreeList.Nodes;
 using log4net;
-using Microsoft.Azure.Management.ResourceManager.Fluent.Core.DAG;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
-using System.Diagnostics;
-using System.Diagnostics.Eventing.Reader;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
@@ -43,12 +31,28 @@ namespace treelist
         {
             InitializeComponent();
             InitializeTreeList();
-            // Configure log4net using the config file
-            log4net.Config.XmlConfigurator.Configure(new FileInfo("log4net.config"));
+            log4net.Config.XmlConfigurator.Configure(new FileInfo("log4net.config"));//使用配置文件
+            InitializeLog4Net("日志添加字段");// 日志文件名添加自定义字段
             _logger.Info("程序开始运行.");
         }
 
+        /// <summary>
+        /// 日志文件名添加自定义字段
+        /// </summary>
+        /// <param name="customFieldName"></param>
+        static void InitializeLog4Net(string customFieldName)
+        {
+            log4net.Config.XmlConfigurator.Configure(); // 配置 log4net（确保你已经在配置文件中定义了 log4net 配置）
 
+            var appender = (log4net.Appender.RollingFileAppender)log4net.LogManager.GetRepository()
+                .GetAppenders().FirstOrDefault(a => a.Name == "FileAppender");
+
+            if (appender != null)
+            {
+                appender.File = $"C:/Logs/{customFieldName}";
+                appender.ActivateOptions(); // 重新激活配置以应用更改
+            }
+        }
         /// <summary>
         /// 设置文件名颜色显示
         /// </summary>
@@ -417,7 +421,7 @@ namespace treelist
             var localNodeId = nodeList.FirstOrDefault(n => n.Name == "Local")?.ID;
             if (localNodeId != null)
             {
-                _logger.Warn("测试修改数据，treelist实时更新.");
+                _logger.Warn ("测试修改数据，treelist实时更新.");
                 // 使用找到的ID来更新对应的节点
                 var nodeToUpdate = nodeList.FirstOrDefault(n => n.ID == localNodeId);
                 if (nodeToUpdate != null)
